@@ -14,8 +14,35 @@ const int whiteBodySize = kernelSize*kernelSize - 2*(skewFactor + 2*skewFactor);
 
 
 
+template<typename T>
+T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
+{
+	return data[(y + searchHeight)*step + (x + searchWidth)] - 
+		data[y*step + (x + searchWidth)] -
+		data[(y + searchHeight)*step + x] +
+		data[y*step + x];
+}
 
-A4Matcher::A4Matcher() : lineClusterifier(0.3f, 20.0f), pointClusterifier(10.0f), mainSize(cvSize(-1, -1)), resizeFactor(2) //TODO: replace with constants
+
+template<typename T>
+int blockPass(T val1, T val2, T val3, T val4, T threshold)
+{
+	int res = 0;
+	if(val1 >= threshold)
+		++res;
+	if(val2 >= threshold)
+		++res;
+	if(val3 >= threshold)
+		++res;
+	if(val4 >= threshold)
+		++res;
+	if(res >= 3)
+		return true;
+	return false;
+}
+
+
+A4Matcher::A4Matcher() : lineClusterifier(0.3f, 20.0f), pointClusterifier(10.0f), mainSize(cvSize(-1, -1)), resizeFactor(4) //TODO: replace with constants
 {
 
 }
@@ -25,7 +52,8 @@ void A4Matcher::initMemory(CvSize size)
 	clearMemory();
 
 	mainSize = size;
-	CvSize sizeFactored = cvSize(size.width/resizeFactor, size.height/resizeFactor);
+	sizeFactored = cvSize(size.width/resizeFactor, size.height/resizeFactor);
+	sizeFactoredII = cvSize(sizeFactored.width + 1, sizeFactored.height + 1);
 
 	//Resetting memory banks
 	//Main image
@@ -63,6 +91,13 @@ void A4Matcher::initMemory(CvSize size)
 	dBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	lBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	rBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
+	
+	uBordersII = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
+	dBordersII = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
+	lBordersII = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
+	rBordersII = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
+
+    buffer = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 }
 
 void A4Matcher::clearMemory()
@@ -124,6 +159,18 @@ void A4Matcher::clearMemory()
 		cvReleaseImage(&lBorders);
 	if(rBorders != nullptr)
 		cvReleaseImage(&rBorders);
+	
+	if(uBordersII != nullptr)
+		cvReleaseImage(&uBorders);
+	if(dBordersII != nullptr)
+		cvReleaseImage(&dBorders);
+	if(lBordersII != nullptr)
+		cvReleaseImage(&lBorders);
+	if(rBordersII != nullptr)
+		cvReleaseImage(&rBorders);
+
+	if(buffer != nullptr)
+		cvReleaseImage(&buffer);
 }
 
 
@@ -211,75 +258,39 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 	const int firstDerivativeDiagThreshold = 40;
 	const int firstDerivativeXYThreshold = 180;
 
-	/*
-	//Derivatives
-	cvSobel(redChannelResized, redSobelH, 1, 0, 3);
-	cvSobel(greenChannelResized, greenSobelH, 1, 0, 3);
-	cvSobel(blueChannelResized, blueSobelH, 1, 0, 3);
-
-	cvSobel(redChannelResized, redSobelV, 0, 1, 3);
-	cvSobel(greenChannelResized, greenSobelV, 0, 1, 3);
-	cvSobel(blueChannelResized, blueSobelV, 0, 1, 3);
-	*/
-
-	/*
-	//Fast corner detector
-    uchar *dataCornerDetectorURSecond = (uchar *)cornerDetector2DerivativeUR->imageData;
-    uchar *dataCornerDetectorDRSecond = (uchar *)cornerDetector2DerivativeDR->imageData;
-    uchar *dataCornerDetectorURFirst = (uchar *)cornerDetector1DerivativeUR->imageData;
-    uchar *dataCornerDetectorDRFirst = (uchar *)cornerDetector1DerivativeDR->imageData;
-	*/
-
     uchar *dataRed = (uchar *)redChannelResized->imageData;
     uchar *dataGreen = (uchar *)greenChannelResized->imageData;
     uchar *dataBlue = (uchar *)blueChannelResized->imageData;
-
-	/*
-    short *dataRedSobelH = (short *)redSobelH->imageData;
-    short *dataGreenSobelH = (short *)greenSobelH->imageData;
-    short *dataBlueSobelH = (short *)blueSobelH->imageData;
-
-    short *dataRedSobelV = (short *)redSobelV->imageData;
-    short *dataGreenSobelV = (short *)greenSobelV->imageData;
-    short *dataBlueSobelV = (short *)blueSobelV->imageData;
-	
-    uchar *dataBordersH = (uchar *)horizontalBorders->imageData;
-    uchar *dataBordersV = (uchar *)verticalBorders->imageData;
-	*/
 
     uchar *dataUBorders = (uchar *)uBorders->imageData;
     uchar *dataDBorders = (uchar *)dBorders->imageData;
     uchar *dataLBorders = (uchar *)lBorders->imageData;
     uchar *dataRBorders = (uchar *)rBorders->imageData;
+    uchar *dataBuffer = (uchar *)buffer->imageData;
+    
+	const int numberOfAnalyzers = 5; //TODO: causes image inflation? //9
 	
     int stepU8 = redChannelResized->widthStep;
-
-	/*
-    int stepU16 = redSobelH->widthStep;
-
-	unsigned char val2R, val2G, val2B;
-	
-	unsigned char val0R, val0G, val0B;
-	unsigned char val1R, val1G, val1B;
-	unsigned char val3R, val3G, val3B;
-	unsigned char val4R, val4G, val4B;
-	
-	unsigned char vala0R, vala0G, vala0B;
-	unsigned char vala1R, vala1G, vala1B;
-	unsigned char vala3R, vala3G, vala3B;
-	unsigned char vala4R, vala4G, vala4B;
-
-	int tmpU16;
-	int derivativeR, derivativeG, derivativeB;
-	int derivativeRa, derivativeGa, derivativeBa;
-	*/
-
 	int tmpU8;
 
 	//Calculating borders with state-keeptin border analyzer
-	const int numberOfAnalyzers = 5;
 	int numberOfOk;
 	BorderAnalyzer ba[numberOfAnalyzers];
+
+	//Zerofying. May be optimized.
+	for(int j = 0; j < redChannelResized->width; ++j) 
+	{
+		for(int i = 0; i < redChannelResized->height; ++i) 
+		{
+			tmpU8 = i*stepU8 + j;
+			dataUBorders[tmpU8] = 0;
+			dataDBorders[tmpU8] = 0;
+			dataRBorders[tmpU8] = 0;
+			dataLBorders[tmpU8] = 0;
+			dataBuffer[tmpU8] = 0;
+		}
+	}
+
     for (int j = numberOfAnalyzers/2; j < redChannelResized->width-numberOfAnalyzers/2; ++j) 
 	{
 		for(int k = 0; k < numberOfAnalyzers; ++k)
@@ -344,109 +355,26 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 		}
 	}
 	
+	cvIntegral(uBorders, uBordersII);
+	cvIntegral(dBorders, dBordersII);
+	cvIntegral(lBorders, lBordersII);
+	cvIntegral(rBorders, rBordersII);
+	
+	/*
 	cvShowImage("uBorders", uBorders);
 	cvShowImage("dBorders", dBorders);
 	cvShowImage("lBorders", lBorders);
 	cvShowImage("rBorders", rBorders);
-    char act = cvWaitKey(100000);
-	/*
-	cvShowImage("redChannelResized", redChannelResized);
-	cvShowImage("greenChannelResized", greenChannelResized);
-	cvShowImage("blueChannelResized", blueChannelResized);
 	*/
 
 	/*
-    for (int i = 2; i < redSobelH->height - 3; i++) 
-	{
-        for (int j = 2; j < redSobelH->width - 3; j++) 
-		{
-			tmpU16 = i*stepU16 + j;
-
-			tmpU8 = (i-2)*stepU8+j+2;
-			val0R = dataRed[tmpU8];
-			val0G = dataGreen[tmpU8];
-			val0B = dataBlue[tmpU8];
-
-			tmpU8 = (i-1)*stepU8+j+1;
-			val1R = dataRed[tmpU8];
-			val1G = dataGreen[tmpU8];
-			val1B = dataBlue[tmpU8];
-
-			tmpU8 = (i+1)*stepU8+j-1;
-			val3R = dataRed[tmpU8];
-			val3G = dataGreen[tmpU8];
-			val3B = dataBlue[tmpU8];
-
-			tmpU8 = (i+2)*stepU8+j-2;
-			val4R = dataRed[tmpU8];
-			val4G = dataGreen[tmpU8];
-			val4B = dataBlue[tmpU8];
-
-			tmpU8 = (i-2)*stepU8+j-2;
-			vala0R = dataRed[tmpU8];
-			vala0G = dataGreen[tmpU8];
-			vala0B = dataBlue[tmpU8];
-
-			tmpU8 = (i-1)*stepU8+j-1;
-			vala1R = dataRed[tmpU8];
-			vala1G = dataGreen[tmpU8];
-			vala1B = dataBlue[tmpU8];
-
-			tmpU8 = (i+1)*stepU8+j+1;
-			vala3R = dataRed[tmpU8];
-			vala3G = dataGreen[tmpU8];
-			vala3B = dataBlue[tmpU8];
-
-			tmpU8 = (i+2)*stepU8+j+2;
-			vala4R = dataRed[tmpU8];
-			vala4G = dataGreen[tmpU8];
-			vala4B = dataBlue[tmpU8];
-
-			tmpU8 = i*stepU8+j;
-			val2R = dataRed[tmpU8];
-			val2G = dataGreen[tmpU8];
-			val2B = dataBlue[tmpU8];
-			
-			derivativeR = secondDerivative(val0R, val1R, val2R, val3R, val4R);
-			derivativeG = secondDerivative(val0G, val1G, val2G, val3G, val4G);
-			derivativeB = secondDerivative(val0B, val1B, val2B, val3B, val4B);
-			
-			derivativeRa = secondDerivative(vala0R, vala1R, val2R, vala3R, vala4R);
-			derivativeGa = secondDerivative(vala0G, vala1G, val2G, vala3G, vala4G);
-			derivativeBa = secondDerivative(vala0B, vala1B, val2B, vala3B, vala4B);
-			
-			dataCornerDetectorURSecond[tmpU8] = sumOfAbsoluteValues(derivativeR, derivativeG, derivativeB) > secondDerivativeThreshold ? 255 : 0;
-			dataCornerDetectorDRSecond[tmpU8] = sumOfAbsoluteValues(derivativeRa, derivativeGa, derivativeBa) > secondDerivativeThreshold ? 255 : 0;
-			
-			derivativeR = firstDerivative(val1R, val3R); //firstDerivativeGradual(val0R, val1R, val2R, val3R, val4R); //firstDerivativeSecondPrecision(val0R, val1R, val2R, val3R, val4R);
-			derivativeG = firstDerivative(val1R, val3R); //firstDerivativeGradual(val0R, val1R, val2R, val3R, val4R); //firstDerivativeSecondPrecision(val0G, val1G, val2G, val3G, val4G);
-			derivativeB = firstDerivative(val1R, val3R); //firstDerivativeGradual(val0R, val1R, val2R, val3R, val4R); //firstDerivativeSecondPrecision(val0B, val1B, val2B, val3B, val4B);
-			
-			derivativeRa = firstDerivative(vala1R, vala3R); //firstDerivativeGradual(vala0R, vala1R, val2R, vala3R, vala4R); //firstDerivativeSecondPrecision(vala0R, vala1R, val2R, vala3R, vala4R);
-			derivativeGa = firstDerivative(vala1G, vala3G); //firstDerivativeGradual(vala0R, vala1R, val2R, vala3R, vala4R); //firstDerivativeSecondPrecision(vala0G, vala1G, val2G, vala3G, vala4G);
-			derivativeBa = firstDerivative(vala1B, vala3B); //firstDerivativeGradual(vala0R, vala1R, val2R, vala3R, vala4R); //firstDerivativeSecondPrecision(vala0B, vala1B, val2B, vala3B, vala4B);
-			
-			dataCornerDetectorURFirst[tmpU8] = sumOfAbsoluteValues(derivativeR, derivativeG, derivativeB) > firstDerivativeDiagThreshold ? 255 : 0;
-			dataCornerDetectorDRFirst[tmpU8] = sumOfAbsoluteValues(derivativeRa, derivativeGa, derivativeBa) > firstDerivativeDiagThreshold ? 255 : 0;
-
-			//Careful! Watch H and V switched places!
-			dataBordersV[tmpU8] = sumOfAbsoluteValues(dataRedSobelH[tmpU8], dataRedSobelH[tmpU8], dataRedSobelH[tmpU8]) > firstDerivativeXYThreshold ? 255 : 0; //FIXME: why tmpU8? logically it should be tmpU16
-			dataBordersH[tmpU8] = sumOfAbsoluteValues(dataRedSobelV[tmpU8], dataGreenSobelV[tmpU8], dataBlueSobelV[tmpU8]) > firstDerivativeXYThreshold ? 255 : 0; 
-
-		}
-	}
+	cvShowImage("uBordersII", uBordersII);
+	cvShowImage("dBordersII", dBordersII);
+	cvShowImage("lBordersII", lBordersII);
+	cvShowImage("rBordersII", rBordersII);
 	*/
-	/*
-	cvShowImage("verticalBorders", verticalBorders);
-	cvShowImage("horizontalBorders", horizontalBorders);
-	
-	cvShowImage("cornerDetector2DerivativeUR", cornerDetector2DerivativeUR);
-	cvShowImage("cornerDetector2DerivativeDR", cornerDetector2DerivativeDR);
 
-	cvShowImage("cornerDetector1DerivativeUR", cornerDetector1DerivativeUR);
-	cvShowImage("cornerDetector1DerivativeDR", cornerDetector1DerivativeDR);
-    char ac = cvWaitKey(100000);
-	*/
+    //char act = cvWaitKey(100000);
 }
 
 void A4Matcher::setAndAnalyseImage(IplImage *aimage)
@@ -457,7 +385,127 @@ void A4Matcher::setAndAnalyseImage(IplImage *aimage)
 	channelSplit(aimage);
 	//applyColorInvalidator();
 	prepareDerivativesSearchTemplates();
-	analyseImage();
+	//analyseImage();
+	applyA4SearchMask();
+	normalizePoints();
+}
+
+
+void A4Matcher::applyA4SearchMask() 
+{
+    int *dataUBordersII = (int *)uBordersII->imageData;
+    int *dataDBordersII = (int *)dBordersII->imageData;
+    int *dataLBordersII = (int *)lBordersII->imageData;
+    int *dataRBordersII = (int *)rBordersII->imageData;
+    unsigned char *dataBuffer = (unsigned char *)buffer->imageData;
+	int step = uBordersII->widthStep/sizeof(int);
+	int stepBuffer = buffer->widthStep/sizeof(char);
+
+	int searchWidth;
+	int searchHeight;
+	const float maxSizeDivisor = 1.0f/2.0f; //2.0f/3.0f; // <<<======================
+	const int kernelResolution = 1;
+	if(sizeFactored.width > sizeFactored.height*99/70) {
+		searchWidth = sizeFactored.width*maxSizeDivisor; //TODO: make it constant
+		searchHeight = searchWidth*70/99;
+	} else {
+		searchHeight = sizeFactored.height*maxSizeDivisor; //TODO: make it constant
+		searchWidth = searchHeight*99/70;
+	}
+
+	const int safetyMarginDivisor = 6;
+	int safetyWidthMargin = max(searchHeight/safetyMarginDivisor, kernelResolution); //TODO: note they switched places
+	int safetyHeightMargin = max(searchWidth/safetyMarginDivisor, kernelResolution);
+	int widthBorderBlock = (searchWidth + 2*safetyWidthMargin)/4; //4 border blocks
+	int heightBorderBlock = (searchHeight + 2*safetyHeightMargin)/4; //4 border blocks
+	
+	int debug = 2;
+	const int minHeight = 20;
+	while(searchHeight > minHeight) 
+	{
+		for(int i = 0; i < sizeFactored.height - searchHeight - 2*safetyHeightMargin; ++i) 
+		{
+			for(int j = 0; j < sizeFactored.width - searchWidth - 2*safetyWidthMargin; ++j)
+			{
+				if(dataBuffer[i*stepBuffer + j] == 0)
+				{
+					int whiteBodyBorders = pieceOfII(dataUBordersII, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
+					whiteBodyBorders += pieceOfII(dataDBordersII, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
+					whiteBodyBorders += pieceOfII(dataRBordersII, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
+					whiteBodyBorders += pieceOfII(dataLBordersII, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
+					if(whiteBodyBorders < 600*255) //!
+					{ 
+						//TODO: make it constant
+						//printf("wb %d %d\n", j, i);
+
+						int borderPixels1b = pieceOfII(dataUBordersII, j,						i, widthBorderBlock, safetyHeightMargin, step); 
+						int borderPixels2b = pieceOfII(dataUBordersII, j +   widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
+						int borderPixels3b = pieceOfII(dataUBordersII, j + 2*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
+						int borderPixels4b = pieceOfII(dataUBordersII, j + 3*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
+						if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+						{
+							//printf("ubord %d %d\n", j, i);
+					
+							borderPixels1b = pieceOfII(dataLBordersII, j, i,					   safetyWidthMargin, heightBorderBlock, step); 
+							borderPixels2b = pieceOfII(dataLBordersII, j, i +   heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+							borderPixels3b = pieceOfII(dataLBordersII, j, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+							borderPixels4b = pieceOfII(dataLBordersII, j, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+					
+							if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255) ) //borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+							{
+								borderPixels1b = pieceOfII(dataDBordersII, j,						i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step); 
+								borderPixels2b = pieceOfII(dataDBordersII, j +   widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
+								borderPixels3b = pieceOfII(dataDBordersII, j + 2*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
+								borderPixels4b = pieceOfII(dataDBordersII, j + 3*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);	
+
+								if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+								{
+									borderPixels1b = pieceOfII(dataRBordersII, j + searchWidth + safetyWidthMargin, i,					     safetyWidthMargin, heightBorderBlock, step); 
+									borderPixels2b = pieceOfII(dataRBordersII, j + searchWidth + safetyWidthMargin, i +   heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+									borderPixels3b = pieceOfII(dataRBordersII, j + searchWidth + safetyWidthMargin, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+									borderPixels4b = pieceOfII(dataRBordersII, j + searchWidth + safetyWidthMargin, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
+								
+									if(blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255)) //( borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+									{
+										int overlap = 0;
+										for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
+										{
+											for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
+											{
+												overlap += dataBuffer[(i + k)*stepBuffer + j + l];
+											}
+										}
+										if(overlap < (searchWidth + 2*safetyWidthMargin)*(searchHeight + 2*safetyHeightMargin)*3/4) 
+										{
+											A4PreDetected.push_back(A4PreDetectedRecord(cvPoint(j + safetyWidthMargin, i + safetyHeightMargin), 
+																						cvPoint(j + safetyWidthMargin + searchWidth, i + safetyHeightMargin + searchHeight),
+																						cvPoint(j, i),
+																						cvPoint(j + searchWidth + 2*safetyWidthMargin, i + searchHeight + 2*safetyHeightMargin)) );
+											for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
+											{
+												for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
+												{
+													dataBuffer[(i + k)*stepBuffer + j + l] = 1;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		searchHeight -= kernelResolution; //safetyHeightMargin;
+		searchWidth = searchHeight*99/70;
+		
+		safetyWidthMargin = max(searchHeight/safetyMarginDivisor, kernelResolution); //TODO: note they switched places
+		safetyHeightMargin = max(searchWidth/safetyMarginDivisor, kernelResolution);
+		widthBorderBlock = (searchWidth + 2*safetyWidthMargin)/4; //4 border blocks
+		heightBorderBlock = (searchHeight + 2*safetyHeightMargin)/4; //4 border blocks
+	}
 }
 
 bool A4Matcher::applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0)
@@ -658,19 +706,18 @@ void A4Matcher::analyseImage()
 	applyDRCornerSearch();
 	applyDLCornerSearch();
 
-	normalizePoints();
 	/*
 	applyKernelSubroutine(this->ULCorners, kernelULCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasUL);
 	applyKernelSubroutine(this->URCorners, kernelURCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasUL);
 	applyKernelSubroutine(this->DLCorners, kernelDLCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasDR);
 	applyKernelSubroutine(this->DRCorners, kernelDRCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasDR);
 	*/
-	/*
+	
 	pointClusterifier.clasterifyList(this->ULCorners, -1, -1);
 	pointClusterifier.clasterifyList(this->URCorners,  1, -1);
 	pointClusterifier.clasterifyList(this->DLCorners, -1,  1);
 	pointClusterifier.clasterifyList(this->DRCorners,  1,  1);
-	*/
+	
 	/*if(!findA4()) {} */
 	//{ 
 		/*
@@ -756,6 +803,9 @@ void A4Matcher::dump()
 	for(std::list<CvPoint>::iterator it = DRCorners.begin(); it != DRCorners.end(); ++it) {
 		cvDrawCircle(image, *it, 3*debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
 	}
+	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
+		cvDrawRect(image, (*it).ulpt, (*it).drpt, CV_RGB(255, 255, 255), 1, 8, 0);
+	}
 	/*
 	for(std::list<CvRect>::iterator it = foundA4.begin(); it != foundA4.end(); ++it) {
 		cvDrawRect(imageResized, cvPoint((*it).x, (*it).y), cvPoint((*it).x - (*it).width, (*it).y - (*it).height), CV_RGB(255, 255, 255), 3, 8, 0);
@@ -765,10 +815,10 @@ void A4Matcher::dump()
 	}
 	*/
 	//cvDrawCircle(imageResized, cvPoint(imageResized->width/2, imageResized->height/2), 2, CV_RGB(255, 255, 255), 1, 8, 0);
-	cvShowImage("image", image);
-	cvShowImage("redChannelResized", redChannelResized);
-	cvShowImage("greenChannelResized", greenChannelResized);
-	cvShowImage("blueChannelResized", blueChannelResized);
+	//cvShowImage("image", image);
+	//cvShowImage("redChannelResized", redChannelResized);
+	//cvShowImage("greenChannelResized", greenChannelResized);
+	//cvShowImage("blueChannelResized", blueChannelResized);
 	//cvShowImage("imageCanny", imageCanny);
 	//cvShowImage("imageCannyResized", imageCannyResized);
 	//cvShowImage("imageResized", imageResized);
@@ -794,6 +844,16 @@ void A4Matcher::normalizePoints()
 	for(std::list<CvPoint>::iterator it = DRCorners.begin(); it != DRCorners.end(); ++it) {
 		(*it).x = (*it).x*resizeFactor + resizeFactor/2;
 		(*it).y = (*it).y*resizeFactor + resizeFactor/2;
+	}
+	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
+		(*it).ulpt.x = (*it).ulpt.x*resizeFactor + resizeFactor/2;
+		(*it).ulpt.y = (*it).ulpt.y*resizeFactor + resizeFactor/2;
+		(*it).drpt.x = (*it).drpt.x*resizeFactor + resizeFactor/2;
+		(*it).drpt.y = (*it).drpt.y*resizeFactor + resizeFactor/2;
+		(*it).ulptBorder.x = (*it).ulptBorder.x*resizeFactor + resizeFactor/2;
+		(*it).ulptBorder.y = (*it).ulptBorder.y*resizeFactor + resizeFactor/2;
+		(*it).drptBorder.x = (*it).drptBorder.x*resizeFactor + resizeFactor/2;
+		(*it).drptBorder.y = (*it).drptBorder.y*resizeFactor + resizeFactor/2;
 	}
 }
 
@@ -840,6 +900,7 @@ void A4Matcher::clearResults()
 	URCorners.clear();
 	DLCorners.clear();
 	DRCorners.clear();
+	A4PreDetected.clear();
 	foundA4.clear();
 }
 

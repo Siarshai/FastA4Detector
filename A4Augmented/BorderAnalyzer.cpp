@@ -18,13 +18,13 @@ bool BorderAnalyzer::analyze(int r, int g, int b)
 	lastB = b;
 	if(aftermath) 
 	{
-		aftermath = false;
+		--aftermath;
 		return true;
 	}
 	if(weightedGradient > gradientHighTreshold) 
 	{
-		aftermath = true;
-		gradientWeight = 0;
+		aftermath = 2;
+		gradientWeight = 0.75;
 		return true;
 	}
 			
