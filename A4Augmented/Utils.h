@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgproc/imgproc_c.h"
@@ -18,6 +20,32 @@ double matchForegroundTrimBlack(unsigned int pixel, unsigned int meanForeground,
 
 unsigned int distanceManhattan(CvPoint pt1, CvPoint pt2);
 
+
+template<typename T>
+T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
+{
+	return data[(y + searchHeight)*step + (x + searchWidth)] - 
+		data[y*step + (x + searchWidth)] -
+		data[(y + searchHeight)*step + x] +
+		data[y*step + x];
+}
+
+template<typename T>
+int blockPass(T val1, T val2, T val3, T val4, T threshold)
+{
+	int res = 0;
+	if(val1 >= threshold)
+		++res;
+	if(val2 >= threshold)
+		++res;
+	if(val3 >= threshold)
+		++res;
+	if(val4 >= threshold)
+		++res;
+	if(res >= 3)
+		return true;
+	return false;
+}
 
 template <typename T>
 unsigned int sumOfAbsoluteValues(T r, T g, T b)

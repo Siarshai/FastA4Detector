@@ -18,24 +18,13 @@ class A4Matcher
 		CvPoint pt;
 		int n;
 	};
-
-
-	const static unsigned char debugShowSize;
-	const static float thresholdCornerLikelihood;
-	const static float thresholdCornerForegroundDispersion;
-	const static unsigned int cornerToIntersectionMaxDistance;
 	
 	std::list<CvPoint> ULCorners;
 	std::list<CvPoint> URCorners;
 	std::list<CvPoint> DLCorners;
 	std::list<CvPoint> DRCorners;
 
-	
-	LineClusterifier lineClusterifier;
-	PointClusterifier pointClusterifier;
-
 	int resizeFactor;
-	
 	CvSize mainSize;
 	CvSize sizeFactored;
 	CvSize sizeFactoredII;
@@ -53,10 +42,6 @@ class A4Matcher
 	IplImage *uBordersII, *dBordersII, *lBordersII, *rBordersII;
 
 	IplImage *a4FoundMark;
-	
-	IplImage *cornerDetector2DerivativeUR, *cornerDetector2DerivativeDR;
-	IplImage *cornerDetector1DerivativeUR, *cornerDetector1DerivativeDR;
-
 	IplImage *buffer;
 	
 	void formatImage(IplImage *aimage);
@@ -64,19 +49,17 @@ class A4Matcher
 	void applyColorInvalidator();
 	void prepareDerivativesSearchTemplates();
 
-	//void applyKernelSubroutine(std::list<CvPoint> &corners, const unsigned char *kernel, const unsigned int kernelSize, const unsigned int numberOfForegroundPixelsInKernel, 
-	//						   const unsigned int numberOfBorderIntersectionPixelsInKernel, const unsigned int numberOfBorderPixelsInKernelPerSide, unsigned char biasX, unsigned char biasY);
-	
-
 	void applyURCornerSearch();
 	void applyULCornerSearch();
 	void applyDRCornerSearch();
 	void applyDLCornerSearch();
+
 	void applyBaseCornerSearch(std::list<CvPoint>& cornersList, uchar *dataHorBorder, uchar *dataVerBorder, int horStep, int verStep);
 	
 	void applyA4SearchMask();
+	void findCorners();
 
-	bool applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0);
+	//bool applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0);
 	bool applyBorderDetector(uchar *dataBorder, int step, int orthogonalStep, int borderLookupSize, int maxFails);
 
 	void addIntersectionsToCornersList();

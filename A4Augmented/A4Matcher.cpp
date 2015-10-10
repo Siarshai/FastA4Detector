@@ -3,46 +3,8 @@
 #include "A4Matcher.h"
 
 
-const unsigned char A4Matcher::debugShowSize = 1;
-const float A4Matcher::thresholdCornerLikelihood = 0.95f;
-const float A4Matcher::thresholdCornerForegroundDispersion = 300; //TODO: less actually
-const unsigned int A4Matcher::cornerToIntersectionMaxDistance = 10;
 
-const int kernelSize = 12;
-const int skewFactor = 4;
-const int whiteBodySize = kernelSize*kernelSize - 2*(skewFactor + 2*skewFactor); // + 3*skewFactor + 4*skewFactor); //FIXME: this is for kernelSize = 20 only
-
-
-
-template<typename T>
-T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
-{
-	return data[(y + searchHeight)*step + (x + searchWidth)] - 
-		data[y*step + (x + searchWidth)] -
-		data[(y + searchHeight)*step + x] +
-		data[y*step + x];
-}
-
-
-template<typename T>
-int blockPass(T val1, T val2, T val3, T val4, T threshold)
-{
-	int res = 0;
-	if(val1 >= threshold)
-		++res;
-	if(val2 >= threshold)
-		++res;
-	if(val3 >= threshold)
-		++res;
-	if(val4 >= threshold)
-		++res;
-	if(res >= 3)
-		return true;
-	return false;
-}
-
-
-A4Matcher::A4Matcher() : lineClusterifier(0.3f, 20.0f), pointClusterifier(10.0f), mainSize(cvSize(-1, -1)), resizeFactor(4) //TODO: replace with constants
+A4Matcher::A4Matcher() : mainSize(cvSize(-1, -1)), resizeFactor(4) //TODO: replace with constants //lineClusterifier(0.3f, 20.0f), pointClusterifier(10.0f), 
 {
 
 }
@@ -82,11 +44,13 @@ void A4Matcher::initMemory(CvSize size)
     horizontalBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
     verticalBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	
+	/*
 	cornerDetector2DerivativeUR = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	cornerDetector2DerivativeDR = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	cornerDetector1DerivativeUR = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	cornerDetector1DerivativeDR = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-	
+	*/
+
 	uBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	dBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	lBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
@@ -142,6 +106,7 @@ void A4Matcher::clearMemory()
 	if(verticalBorders != nullptr)
 		cvReleaseImage(&verticalBorders);
 	
+	/*
 	if(cornerDetector2DerivativeUR != nullptr)
 		cvReleaseImage(&cornerDetector2DerivativeUR);
 	if(cornerDetector2DerivativeDR != nullptr)
@@ -150,7 +115,8 @@ void A4Matcher::clearMemory()
 		cvReleaseImage(&cornerDetector1DerivativeUR);
 	if(cornerDetector1DerivativeDR != nullptr)
 		cvReleaseImage(&cornerDetector1DerivativeDR);
-	
+	*/
+
 	if(uBorders != nullptr)
 		cvReleaseImage(&uBorders);
 	if(dBorders != nullptr)
@@ -406,10 +372,10 @@ void A4Matcher::applyA4SearchMask()
 	const float maxSizeDivisor = 1.0f/2.0f; //2.0f/3.0f; // <<<======================
 	const int kernelResolution = 1;
 	if(sizeFactored.width > sizeFactored.height*99/70) {
-		searchWidth = sizeFactored.width*maxSizeDivisor; //TODO: make it constant
+		searchWidth = static_cast<int>( sizeFactored.width*maxSizeDivisor ); //TODO: make it constant
 		searchHeight = searchWidth*70/99;
 	} else {
-		searchHeight = sizeFactored.height*maxSizeDivisor; //TODO: make it constant
+		searchHeight = static_cast<int>( sizeFactored.height*maxSizeDivisor ); //TODO: make it constant
 		searchWidth = searchHeight*99/70;
 	}
 
@@ -508,6 +474,7 @@ void A4Matcher::applyA4SearchMask()
 	}
 }
 
+/*
 bool A4Matcher::applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0)
 {
 	int failsLeft = kernelSize;
@@ -589,7 +556,7 @@ bool A4Matcher::applyWhiteBodyDetector(int directionX, int directionY, int x0, i
 	}
 	return false;
 }
-
+*/
 
 bool A4Matcher::applyBorderDetector(uchar *dataBorder, int step, int orthogonalStep, int borderLookupSize, int maxFails) 
 {
@@ -619,7 +586,8 @@ bool A4Matcher::applyBorderDetector(uchar *dataBorder, int step, int orthogonalS
 void A4Matcher::applyBaseCornerSearch(std::list<CvPoint>& cornersList, uchar *dataHorBorder, uchar *dataVerBorder, int horStep, int verStep)
 {
     int step = imageResized->widthStep;
-
+	
+	const int kernelSize = 12;
 	const int xyBorderLookupSize = 11;
 	const int xyMaxFails = 2;
 	const int xySafeShift = 2;
@@ -662,7 +630,7 @@ void A4Matcher::applyBaseCornerSearch(std::list<CvPoint>& cornersList, uchar *da
 					//if(diagonalUpperDerivativeDetected && diagonalRightDerivativeDetected)
 					//{
 						printf("\n===\ndiagonalDerivativeDetected: %d %d\n", j + whiteBodyDirectionX, i + whiteBodyDirectionY);
-						bool whiteBodyDetected = applyWhiteBodyDetector(whiteBodyDirectionX, whiteBodyDirectionY, j + whiteBodyDirectionX, i + whiteBodyDirectionY);
+						bool whiteBodyDetected = 1; //applyWhiteBodyDetector(whiteBodyDirectionX, whiteBodyDirectionY, j + whiteBodyDirectionX, i + whiteBodyDirectionY);
 						if(whiteBodyDetected) 
 						{
 							printf("Corner found: %d %d\n", j + whiteBodyDirectionX, i + whiteBodyDirectionY);
@@ -699,6 +667,7 @@ void A4Matcher::applyDLCornerSearch()
 	applyBaseCornerSearch(DLCorners, (uchar *)dBorders->imageData, (uchar *)lBorders->imageData, 1, -step);
 }
 
+/*
 void A4Matcher::analyseImage() 
 {
 	applyURCornerSearch();
@@ -706,32 +675,28 @@ void A4Matcher::analyseImage()
 	applyDRCornerSearch();
 	applyDLCornerSearch();
 
-	/*
 	applyKernelSubroutine(this->ULCorners, kernelULCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasUL);
 	applyKernelSubroutine(this->URCorners, kernelURCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasUL);
 	applyKernelSubroutine(this->DLCorners, kernelDLCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasDR);
 	applyKernelSubroutine(this->DRCorners, kernelDRCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasDR);
-	*/
 	
 	pointClusterifier.clasterifyList(this->ULCorners, -1, -1);
 	pointClusterifier.clasterifyList(this->URCorners,  1, -1);
 	pointClusterifier.clasterifyList(this->DLCorners, -1,  1);
 	pointClusterifier.clasterifyList(this->DRCorners,  1,  1);
 	
-	/*if(!findA4()) {} */
-	//{ 
-		/*
-		printf("Applying persistent algorithm: alternative kernels\n");
-		*/
-		/*
-		//If no A4 sheets found, apply persistent algorithm
-		printf("Applying persistent algorithm: lines detection\n");
-		lineClusterifier.analyseImage(image);
-		addIntersectionsToCornersList();
-		//lineClusterifier.dump();
-		findA4();
-		*/
-	//}
+}
+*/
+
+
+void A4Matcher::findCorners() 
+{
+	/*
+	applyURCornerSearch();
+	applyULCornerSearch();
+	applyDRCornerSearch();
+	applyDLCornerSearch();
+	*/
 }
 
 bool A4Matcher::findA4() 
@@ -791,6 +756,7 @@ void A4Matcher::dump()
     //namedWindow( "imageResized", CV_WINDOW_AUTOSIZE );
     //cv::namedWindow( "imageResized", CV_WINDOW_AUTOSIZE );
 	//printf("#\n");
+	/*
 	for(std::list<CvPoint>::iterator it = ULCorners.begin(); it != ULCorners.end(); ++it) {
 		cvDrawCircle(image, *it, debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
 	}
@@ -806,6 +772,7 @@ void A4Matcher::dump()
 	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
 		cvDrawRect(image, (*it).ulpt, (*it).drpt, CV_RGB(255, 255, 255), 1, 8, 0);
 	}
+	*/
 	/*
 	for(std::list<CvRect>::iterator it = foundA4.begin(); it != foundA4.end(); ++it) {
 		cvDrawRect(imageResized, cvPoint((*it).x, (*it).y), cvPoint((*it).x - (*it).width, (*it).y - (*it).height), CV_RGB(255, 255, 255), 3, 8, 0);
@@ -857,7 +824,7 @@ void A4Matcher::normalizePoints()
 	}
 }
 
-
+/*
 void A4Matcher::addIntersectionsToCornersList()
 {
 	//First removing points of intersections overlapping with already found corner points
@@ -893,6 +860,7 @@ void A4Matcher::addIntersectionsToCornersList()
 		DRCorners.push_back(*itIntersection);
 	}
 }
+*/
 
 void A4Matcher::clearResults()
 {
