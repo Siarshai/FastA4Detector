@@ -1,21 +1,25 @@
 #include "stdafx.h"
 #include "LocalHoughTransformer.h"
 
-LocalHoughTransformer::LocalHoughTransformer(int aminAngle, int amaxAngle, int awidth, int aheight, int astep, unsigned char *apictureSpace) : 
-	minAngleGlob(aminAngle), maxAngleGlob(amaxAngle), 
-	width(awidth), height(aheight), step(astep), pictureSpace(apictureSpace)
-{
-	maxRhoGlob = static_cast<int>( sqrtf(awidth*awidth + aheight*aheight) );
-	angleRangeGlob = maxAngleGlob - minAngleGlob;
-	parameterSpace.resize(2*maxRhoGlob*angleRangeGlob);
-}
-
+LocalHoughTransformer::LocalHoughTransformer() {}
 
 void LocalHoughTransformer::reset(int awidth, int aheight, unsigned char *apictureSpace)
 {
 	width = awidth;
 	height = aheight;
 	pictureSpace = apictureSpace;
+}
+
+
+void LocalHoughTransformer::fullReset(int aminAngle, int amaxAngle, int awidth, int aheight, int astep, unsigned char *apictureSpace)
+{
+	reset(awidth, aheight, apictureSpace);
+	minAngleGlob = aminAngle;
+	maxAngleGlob = amaxAngle;
+	step = astep;
+	maxRhoGlob = static_cast<int>( sqrtf(awidth*awidth + aheight*aheight) );
+	angleRangeGlob = maxAngleGlob - minAngleGlob;
+	parameterSpace.resize(2*maxRhoGlob*angleRangeGlob);
 }
 
 CvPoint LocalHoughTransformer::analyze()

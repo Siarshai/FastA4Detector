@@ -10,8 +10,9 @@ using std::max;
 class LocalHoughTransformer
 {
 public:
-	LocalHoughTransformer(int aminAngle, int amaxAngle, int awidth, int aheight, int astep, unsigned char *apictureSpace);
+	LocalHoughTransformer();
 	void reset(int awidth, int aheight, unsigned char *apictureSpace);
+	void fullReset(int aminAngle, int amaxAngle, int awidth, int aheight, int astep, unsigned char *apictureSpace);
 	CvPoint analyze();
 	void clear();
 private:
