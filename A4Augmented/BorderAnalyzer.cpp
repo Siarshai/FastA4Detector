@@ -23,7 +23,7 @@ bool BorderAnalyzer::analyze(int r, int g, int b)
 	}
 	if(weightedGradient > gradientHighTreshold) 
 	{
-		aftermath = 2;
+		aftermath = maxAftermath;
 		gradientWeight = 0.75;
 		return true;
 	}
@@ -67,6 +67,12 @@ void BorderAnalyzer::invalidate()
 	lastR = 0;
 	lastG = 0;
 	lastB = 0;
+	aftermath = 0;
 	gradientWeight = 0.0;
 	darknessWeight = 0.0;
+}
+
+void BorderAnalyzer::discardAftermath()
+{
+	aftermath = 0;
 }

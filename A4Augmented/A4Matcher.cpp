@@ -227,8 +227,7 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 
 	//Calculating borders with state-keeptin border analyzer
 	int numberOfOk;
-	vector<BorderAnalyzer> ba;
-	ba.resize(numberOfAnalyzers);
+	vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/2));
 	//BorderAnalyzer ba[numberOfAnalyzers];
 
 	//Zerofying. May be optimized.
@@ -247,8 +246,10 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 
     for (int j = numberOfAnalyzers/2; j < width-numberOfAnalyzers/2; ++j) 
 	{
-		for(int k = 0; k < numberOfAnalyzers; ++k)
-			ba[k].invalidate();
+		for(auto b = ba.begin(); b != ba.end(); ++b)
+			(*b).invalidate();
+		//for(int k = 0; k < numberOfAnalyzers; ++k)
+		//	ba[k].invalidate();
 
 		for (int i = height - 1 - numberOfAnalyzers/2; i >= numberOfAnalyzers/2; --i) 
 		{
@@ -256,23 +257,28 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 			tmpU8 = i*stepU8 + j;
 			for(int k = 0; k < numberOfAnalyzers; ++k)
 				numberOfOk += ba[k].analyze(dataRed[tmpU8 - 2 + k], dataGreen[tmpU8 - 2 + k], dataBlue[tmpU8 - 2 + k]);
-			if(numberOfOk > numberOfAnalyzers - 1)
+			if(numberOfOk > numberOfAnalyzers*3/4) {
 				dataUBorders[tmpU8] = 255;
-			else
+				for(auto b = ba.begin(); b != ba.end(); ++b)
+					(*b).invalidate();
+			} else
 				dataUBorders[tmpU8] = 0;
 		}
 
 		for(int k = 0; k < numberOfAnalyzers; ++k)
 			ba[k].invalidate();
+
 		for (int i = numberOfAnalyzers/2; i < height - numberOfAnalyzers/2; ++i) 
 		{
 			numberOfOk = 0;
 			tmpU8 = i*stepU8 + j;
 			for(int k = 0; k < numberOfAnalyzers; ++k)
 				numberOfOk += ba[k].analyze(dataRed[tmpU8 - 2 + k], dataGreen[tmpU8 - 2 + k], dataBlue[tmpU8 - 2 + k]);
-			if(numberOfOk > numberOfAnalyzers - 1)
+			if(numberOfOk > numberOfAnalyzers*3/4) {
 				dataDBorders[tmpU8] = 255;
-			else
+				for(auto b = ba.begin(); b != ba.end(); ++b)
+					(*b).invalidate();
+			} else
 				dataDBorders[tmpU8] = 0;
 		}
 	}
@@ -287,9 +293,11 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 			tmpU8 = i*stepU8 + j;
 			for(int k = 0; k < numberOfAnalyzers; ++k)
 				numberOfOk += ba[k].analyze(dataRed[tmpU8 + (-2 + k)*stepU8], dataGreen[tmpU8 + (-2 + k)*stepU8], dataBlue[tmpU8 + (-2 + k)*stepU8]);
-			if(numberOfOk > numberOfAnalyzers - 1)
+			if(numberOfOk > numberOfAnalyzers*3/4) {
 				dataRBorders[tmpU8] = 255;
-			else
+				for(auto b = ba.begin(); b != ba.end(); ++b)
+					(*b).invalidate();
+			} else
 				dataRBorders[tmpU8] = 0;
 		}
 
@@ -302,9 +310,11 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 			tmpU8 = i*stepU8 + j;
 			for(int k = 0; k < numberOfAnalyzers; ++k)
 				numberOfOk += ba[k].analyze(dataRed[tmpU8 + (-2 + k)*stepU8], dataGreen[tmpU8 + (-2 + k)*stepU8], dataBlue[tmpU8 + (-2 + k)*stepU8]);
-			if(numberOfOk > numberOfAnalyzers - 1)
+			if(numberOfOk > numberOfAnalyzers*3/4) {
 				dataLBorders[tmpU8] = 255;
-			else
+				for(auto b = ba.begin(); b != ba.end(); ++b)
+					(*b).invalidate();
+			} else
 				dataLBorders[tmpU8] = 0;
 		}
 	}
@@ -314,19 +324,14 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 	cvIntegral(lbord, lbordII);
 	cvIntegral(rbord, rbordII);
 
-	cvShowImage("ubord", ubord);
-	cvShowImage("dbord", dbord);
-	cvShowImage("lbord", lbord);
-	cvShowImage("rbord", rbord);
-
     //char act = cvWaitKey(100000);
 }
 
 
 void A4Matcher::prepareDerivativesSearchTemplates()
 {	
-	const int numberOfAnalyzers = 20; 
-	const int numberOfAnalyzersFactored = 20/resizeFactor; 
+	const int numberOfAnalyzers = 36; 
+	const int numberOfAnalyzersFactored = numberOfAnalyzers/resizeFactor; 
 
 	prepareDerivativesSearchTemplatesBase(redChannelResized, greenChannelResized, blueChannelResized, 
 													  uBordersFactored, dBordersFactored, lBordersFactored, rBordersFactored, 
@@ -337,6 +342,17 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 													  uBorders, dBorders, lBorders, rBorders, 
 													  uBordersII, dBordersII, lBordersII, rBordersII, 
 													  buffer, numberOfAnalyzers);
+	
+	cvShowImage("ubord", uBorders);
+	cvShowImage("dbord", dBorders);
+	cvShowImage("lbord", lBorders);
+	cvShowImage("rbord", rBorders);
+	cvShowImage("uBordersFactored", uBordersFactored);
+	cvShowImage("dBordersFactored", dBordersFactored);
+	cvShowImage("lBordersFactored", lBordersFactored);
+	cvShowImage("rBordersFactored", rBordersFactored);
+	char c = cvWaitKey(100000);
+	
 }
 
 void A4Matcher::setAndAnalyseImage(IplImage *aimage)
@@ -399,7 +415,7 @@ void A4Matcher::applyA4SearchMask()
 					whiteBodyBorders += pieceOfII(datadBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datarBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datalBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
-					if(whiteBodyBorders < 600*255) //!
+					if(whiteBodyBorders < 400*255) //!
 					{ 
 						//TODO: make it constant
 						//printf("wb %d %d\n", j, i);
@@ -408,7 +424,7 @@ void A4Matcher::applyA4SearchMask()
 						int borderPixels2b = pieceOfII(datauBordersIIFactored, j +   widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
 						int borderPixels3b = pieceOfII(datauBordersIIFactored, j + 2*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
 						int borderPixels4b = pieceOfII(datauBordersIIFactored, j + 3*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
-						if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+						if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255/safetyHeightMargin*4/5) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
 						{
 							//printf("ubord %d %d\n", j, i);
 					
@@ -417,21 +433,21 @@ void A4Matcher::applyA4SearchMask()
 							borderPixels3b = pieceOfII(datalBordersIIFactored, j, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
 							borderPixels4b = pieceOfII(datalBordersIIFactored, j, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
 					
-							if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255) ) //borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+							if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255/safetyWidthMargin*4/5) ) //borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
 							{
 								borderPixels1b = pieceOfII(datadBordersIIFactored, j,						i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step); 
 								borderPixels2b = pieceOfII(datadBordersIIFactored, j +   widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
 								borderPixels3b = pieceOfII(datadBordersIIFactored, j + 2*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
 								borderPixels4b = pieceOfII(datadBordersIIFactored, j + 3*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);	
 
-								if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+								if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255/safetyHeightMargin*4/5) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
 								{
 									borderPixels1b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i,					     safetyWidthMargin, heightBorderBlock, step); 
 									borderPixels2b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i +   heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
 									borderPixels3b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
 									borderPixels4b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
 								
-									if(blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255)) //( borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+									if(blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255/safetyWidthMargin*4/5)) //( borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
 									{
 										int overlap = 0;
 										for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
@@ -482,8 +498,8 @@ void A4Matcher::findPreciseBorderAlignedLines()
 {
 	for(A4PreDetectedRecord a4pd : A4PreDetected)
 	{
-		int x = a4pd.ulpt.x;
-		int y = a4pd.ulpt.y;
+		int x = a4pd.ulptBorder.x;
+		int y = a4pd.ulptBorder.y;
 
 		int widthBorderBlock = a4pd.widthBorderBlock*resizeFactor;
 		int heightBorderBlock = a4pd.heightBorderBlock*resizeFactor;

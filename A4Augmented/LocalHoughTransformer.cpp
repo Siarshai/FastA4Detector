@@ -37,11 +37,11 @@ CvPoint LocalHoughTransformer::analyze()
 			{
 				for(int alpha = minAngleGlob; alpha < maxAngleGlob; ++alpha) 
 				{
-					int rhoMod = static_cast<int>( -x*sin(alpha*M_PI/180.0) + y*cos(alpha*M_PI/180.0) + maxRhoGlob ); // TODO: without maxRhoGlob
+					int rhoMod = static_cast<int>( -x*sin(alpha*M_PI/180.0) + y*cos(alpha*M_PI/180.0) ) + maxRhoGlob; // TODO: without maxRhoGlob
 					int alphaMod = alpha - minAngleGlob;
-					for(int i = 0; i <= 0; ++i) //-2 2
+					for(int i = -2; i <= 2; ++i) //-2 2
 					{
-						for(int j = 0; j <= 0; ++j)
+						for(int j = 2; j <= 2; ++j)
 						{
 							if(alphaMod + i >= 0 && alphaMod + i < angleRangeGlob && rhoMod + j >= 0 && rhoMod + j < 2*maxRhoGlob)
 							{
@@ -58,6 +58,11 @@ CvPoint LocalHoughTransformer::analyze()
 				}
 			}
 		}
+	}
+	if(maxVal == -1)
+	{
+		printf(" =( \n");
+		exit(413);
 	}
 	clear();
 	return cvPoint(maxAlpha + minAngleGlob, maxRho - maxRhoGlob);

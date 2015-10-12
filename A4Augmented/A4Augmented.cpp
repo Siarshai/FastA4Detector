@@ -23,11 +23,13 @@ int main(int argc, char** argv)
 			"images/hou1.jpg", "images/hou2.jpg", "images/hou3.jpg", "images/hou4.jpg", "images/hou5.jpg", "images/hou6.jpg",
 			"images/hou7.jpg", "images/hou8.jpg", "images/hou9.jpg", "images/hou10.jpg"  */
 			//"images/easy/1.jpg", "images/easy/2.jpg",
+			"images/clean/hou1.jpg", "images/clean/hou4.jpg", "images/clean/hou2.jpg", "images/clean/hou3.jpg", 
+			"images/clean/hou5.jpg", "images/clean/hou6.jpg", "images/clean/hou7.jpg", "images/clean/hou8.jpg", 
 			"images/garageH/1.JPG", "images/garageH/2.jpg", 
 			"images/garageH/3.jpg", "images/garageH/4.jpg", "images/garageH/5.jpg", "images/garageH/6.jpg",
 			"images/garageV/1.jpg", "images/garageV/2.jpg", "images/garageV/3.jpg", "images/garageV/4.jpg", "images/garageV/5.jpg",
 			"images/own/1.JPG", "images/own/2.JPG", "images/own/3.JPG", "images/own/4.JPG", "images/own/5.JPG", "images/own/6.JPG" };
-		const int size = 17;
+		const int size = 25; //17;
 		int i = 0;
 	#else
 		CvCapture* capture = cvCreateCameraCapture(CV_CAP_ANY); 
@@ -75,29 +77,33 @@ int main(int argc, char** argv)
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		
-		printf("lines %d\n", am.testLines.size());
-		CvPoint line = am.testLines.front();
-		int alpha = line.x;
-		int rho = -line.y;
-		printf("alpha %d, rho %d\n", alpha, rho);
-		CvPoint pt1;
-		CvPoint pt2;
-		if(alpha == 0) 
+		if(am.testLines.size() > 0) 
 		{
-			pt1 = cvPoint(0, -rho);
-			pt2 = cvPoint(frame->width, -rho); 
-		} else if(alpha == 90)
-		{
-			pt1 = cvPoint(rho, 0);
-			pt2 = cvPoint(rho, frame->height);
-		} else
-		{
-			pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
-			pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frame->height)/sin(alpha*M_PI/180.0) , frame->height);
+			printf("lines %d\n", am.testLines.size());
+			CvPoint line = am.testLines.front();
+			int alpha = line.x;
+			int rho = -line.y;
+			printf("alpha %d, rho %d\n", alpha, rho);
+			CvPoint pt1;
+			CvPoint pt2;
+			if(alpha == 0) 
+			{
+				pt1 = cvPoint(0, -rho);
+				pt2 = cvPoint(frame->width, -rho); 
+			} else if(alpha == 90)
+			{
+				pt1 = cvPoint(rho, 0);
+				pt2 = cvPoint(rho, frame->height);
+			} else
+			{
+				pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
+				pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frame->height)/sin(alpha*M_PI/180.0) , frame->height);
+			}
+			cvDrawLine(frame, pt1, pt2, CV_RGB(0, 100, 0), 1, 8, 0);
+			am.testLines.clear();
 		}
-		cvDrawLine(frame, pt1, pt2, CV_RGB(0, 100, 0), 1, 8, 0);
-		am.testLines.clear();
+		else
+			printf("WARNING: no lines detected\n");
 
 
 

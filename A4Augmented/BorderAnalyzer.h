@@ -14,6 +14,7 @@ private:
 	uchar last2G;
 	uchar last2B;
 	int aftermath;
+	int maxAftermath;
 	double gradientHighTreshold;
 	double gradientMidTreshold;
 	double darknessLowTreshold;
@@ -25,12 +26,13 @@ private:
 	double gradientWeight;
 	double darknessWeight;
 public:
-	BorderAnalyzer() : lastR(0), lastG(0), lastB(0), last2R(0), last2G(0), last2B(0), aftermath(2),
+	BorderAnalyzer(int amaxAftermath) : lastR(0), lastG(0), lastB(0), last2R(0), last2G(0), last2B(0), aftermath(0), maxAftermath(amaxAftermath),
 		gradientMidTreshold(10.0), gradientHighTreshold(12.0), 
 		darknessLowTreshold(90.0), darknessMidTreshold(110.0), darknessHighTreshold(130.0), 
 		colorfulnessLowTreshold(120.0*500.0), colorfulnessMidTreshold(120.0*1000.0), colorfulnessHighTreshold(120.0*1200.0), gradientWeight(0) {} //darknessLowTreshold(240)
 	bool analyze(int r, int g, int b);
 	void invalidate();
+	void discardAftermath();
 };
 
 #endif
