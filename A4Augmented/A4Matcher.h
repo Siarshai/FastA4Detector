@@ -41,6 +41,7 @@ class A4Matcher
 
 	IplImage *a4FoundMark;
 	IplImage *buffer;
+	IplImage *bufferFactored;
 	
 	LocalHoughTransformer lhtHor;
 	LocalHoughTransformer lhtVer;
@@ -48,7 +49,12 @@ class A4Matcher
 	void formatImage(IplImage *aimage);
 	void channelSplit(IplImage *aimage);
 	void applyColorInvalidator();
+
 	void prepareDerivativesSearchTemplates();
+	void prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
+													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
+													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 
+													  IplImage *buff, int numberOfAnalyzers);
 
 	void applyURCornerSearch();
 	void applyULCornerSearch();

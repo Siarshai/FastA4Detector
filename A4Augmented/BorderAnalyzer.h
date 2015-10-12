@@ -14,14 +14,14 @@ private:
 	uchar last2G;
 	uchar last2B;
 	int aftermath;
-	const double gradientHighTreshold;
-	const double gradientMidTreshold;
-	const double darknessLowTreshold;
-	const double darknessMidTreshold;
-	const double darknessHighTreshold;
-	const double colorfulnessLowTreshold;
-	const double colorfulnessMidTreshold;
-	const double colorfulnessHighTreshold;
+	double gradientHighTreshold;
+	double gradientMidTreshold;
+	double darknessLowTreshold;
+	double darknessMidTreshold;
+	double darknessHighTreshold;
+	double colorfulnessLowTreshold;
+	double colorfulnessMidTreshold;
+	double colorfulnessHighTreshold;
 	double gradientWeight;
 	double darknessWeight;
 public:

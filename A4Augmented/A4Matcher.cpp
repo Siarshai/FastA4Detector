@@ -44,7 +44,6 @@ void A4Matcher::initMemory(CvSize size)
 	dBordersII = cvCreateImage(sizeII, IPL_DEPTH_32S, 1);
 	lBordersII = cvCreateImage(sizeII, IPL_DEPTH_32S, 1);
 	rBordersII = cvCreateImage(sizeII, IPL_DEPTH_32S, 1);
-	
 
 	uBordersFactored = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 	dBordersFactored = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
@@ -55,8 +54,9 @@ void A4Matcher::initMemory(CvSize size)
 	dBordersIIFactored = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
 	lBordersIIFactored = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
 	rBordersIIFactored = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
-
-    buffer = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
+	
+    buffer = cvCreateImage(size, IPL_DEPTH_8U, 1);
+    bufferFactored = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 }
 
 void A4Matcher::clearMemory()
@@ -118,8 +118,8 @@ void A4Matcher::clearMemory()
 	if(rBordersIIFactored != nullptr)
 		cvReleaseImage(&rBordersFactored);
 
-	if(buffer != nullptr)
-		cvReleaseImage(&buffer);
+	if(bufferFactored != nullptr)
+		cvReleaseImage(&bufferFactored);
 }
 
 
@@ -201,51 +201,56 @@ void A4Matcher::applyColorInvalidator()
 }
 
 
-void A4Matcher::prepareDerivativesSearchTemplates()
-{	
+void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
+													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
+													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 
+													  IplImage *buff, int numberOfAnalyzers)
+{
 	const int secondDerivativeThreshold = 180;
 	const int firstDerivativeDiagThreshold = 40;
 	const int firstDerivativeXYThreshold = 180;
 
-    uchar *dataRed = (uchar *)redChannelResized->imageData;
-    uchar *dataGreen = (uchar *)greenChannelResized->imageData;
-    uchar *dataBlue = (uchar *)blueChannelResized->imageData;
+    uchar *dataRed = (uchar *)rc->imageData;
+    uchar *dataGreen = (uchar *)gc->imageData;
+    uchar *dataBlue = (uchar *)bc->imageData;
 
-    uchar *dataUBorders = (uchar *)uBordersFactored->imageData;
-    uchar *dataDBorders = (uchar *)dBordersFactored->imageData;
-    uchar *dataLBorders = (uchar *)lBordersFactored->imageData;
-    uchar *dataRBorders = (uchar *)rBordersFactored->imageData;
-    uchar *dataBuffer = (uchar *)buffer->imageData;
-    
-	const int numberOfAnalyzers = 5; //TODO: causes image inflation? //9
+    uchar *dataUBorders = (uchar *)ubord->imageData;
+    uchar *dataDBorders = (uchar *)dbord->imageData;
+    uchar *dataLBorders = (uchar *)lbord->imageData;
+    uchar *dataRBorders = (uchar *)rbord->imageData;
+    uchar *databufferFactored = (uchar *)buff->imageData;
 	
-    int stepU8 = redChannelResized->widthStep;
+	int width = rc->width;
+	int height = rc->height;
+    int stepU8 = rc->widthStep;
 	int tmpU8;
 
 	//Calculating borders with state-keeptin border analyzer
 	int numberOfOk;
-	BorderAnalyzer ba[numberOfAnalyzers];
+	vector<BorderAnalyzer> ba;
+	ba.resize(numberOfAnalyzers);
+	//BorderAnalyzer ba[numberOfAnalyzers];
 
 	//Zerofying. May be optimized.
-	for(int j = 0; j < redChannelResized->width; ++j) 
+	for(int j = 0; j < width; ++j) 
 	{
-		for(int i = 0; i < redChannelResized->height; ++i) 
+		for(int i = 0; i < height; ++i) 
 		{
 			tmpU8 = i*stepU8 + j;
 			dataUBorders[tmpU8] = 0;
 			dataDBorders[tmpU8] = 0;
 			dataRBorders[tmpU8] = 0;
 			dataLBorders[tmpU8] = 0;
-			dataBuffer[tmpU8] = 0;
+			databufferFactored[tmpU8] = 0;
 		}
 	}
 
-    for (int j = numberOfAnalyzers/2; j < redChannelResized->width-numberOfAnalyzers/2; ++j) 
+    for (int j = numberOfAnalyzers/2; j < width-numberOfAnalyzers/2; ++j) 
 	{
 		for(int k = 0; k < numberOfAnalyzers; ++k)
 			ba[k].invalidate();
 
-		for (int i = redChannelResized->height - 1 - numberOfAnalyzers/2; i >= numberOfAnalyzers/2; --i) 
+		for (int i = height - 1 - numberOfAnalyzers/2; i >= numberOfAnalyzers/2; --i) 
 		{
 			numberOfOk = 0;
 			tmpU8 = i*stepU8 + j;
@@ -259,7 +264,7 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 
 		for(int k = 0; k < numberOfAnalyzers; ++k)
 			ba[k].invalidate();
-		for (int i = numberOfAnalyzers/2; i < redChannelResized->height - numberOfAnalyzers/2; ++i) 
+		for (int i = numberOfAnalyzers/2; i < height - numberOfAnalyzers/2; ++i) 
 		{
 			numberOfOk = 0;
 			tmpU8 = i*stepU8 + j;
@@ -271,12 +276,12 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 				dataDBorders[tmpU8] = 0;
 		}
 	}
-	for (int i = numberOfAnalyzers/2; i < redChannelResized->height - numberOfAnalyzers/2; ++i) 
+	for (int i = numberOfAnalyzers/2; i < height - numberOfAnalyzers/2; ++i) 
 	{	
 		for(int k = 0; k < numberOfAnalyzers; ++k)
 			ba[k].invalidate();
 
-		for (int j = numberOfAnalyzers/2; j < redChannelResized->width - numberOfAnalyzers/2; ++j) 
+		for (int j = numberOfAnalyzers/2; j < width - numberOfAnalyzers/2; ++j) 
 		{
 			numberOfOk = 0;
 			tmpU8 = i*stepU8 + j;
@@ -291,7 +296,7 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 		for(int k = 0; k < numberOfAnalyzers; ++k)
 			ba[k].invalidate();
 
-		for (int j = redChannelResized->width - 1 - numberOfAnalyzers/2; j >= numberOfAnalyzers/2; --j) 
+		for (int j = width - 1 - numberOfAnalyzers/2; j >= numberOfAnalyzers/2; --j) 
 		{
 			numberOfOk = 0;
 			tmpU8 = i*stepU8 + j;
@@ -304,26 +309,34 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 		}
 	}
 	
-	cvIntegral(uBordersFactored, uBordersIIFactored);
-	cvIntegral(dBordersFactored, dBordersIIFactored);
-	cvIntegral(lBordersFactored, lBordersIIFactored);
-	cvIntegral(rBordersFactored, rBordersIIFactored);
-	
-	/*
-	cvShowImage("uBordersFactored", uBordersFactored);
-	cvShowImage("dBordersFactored", dBordersFactored);
-	cvShowImage("lBordersFactored", lBordersFactored);
-	cvShowImage("rBordersFactored", rBordersFactored);
-	*/
+	cvIntegral(ubord, ubordII);
+	cvIntegral(dbord, dbordII);
+	cvIntegral(lbord, lbordII);
+	cvIntegral(rbord, rbordII);
 
-	/*
-	cvShowImage("uBordersIIFactored", uBordersIIFactored);
-	cvShowImage("dBordersIIFactored", dBordersIIFactored);
-	cvShowImage("lBordersIIFactored", lBordersIIFactored);
-	cvShowImage("rBordersIIFactored", rBordersIIFactored);
-	*/
+	cvShowImage("ubord", ubord);
+	cvShowImage("dbord", dbord);
+	cvShowImage("lbord", lbord);
+	cvShowImage("rbord", rbord);
 
     //char act = cvWaitKey(100000);
+}
+
+
+void A4Matcher::prepareDerivativesSearchTemplates()
+{	
+	const int numberOfAnalyzers = 5*resizeFactor*2/3; 
+	const int numberOfAnalyzersFactored = 5; //9
+
+	prepareDerivativesSearchTemplatesBase(redChannelResized, greenChannelResized, blueChannelResized, 
+													  uBordersFactored, dBordersFactored, lBordersFactored, rBordersFactored, 
+													  uBordersIIFactored, dBordersIIFactored, lBordersIIFactored, rBordersIIFactored, 
+													  bufferFactored, numberOfAnalyzersFactored);
+
+	prepareDerivativesSearchTemplatesBase(redChannel, greenChannel, blueChannel, 
+													  uBorders, dBorders, lBorders, rBorders, 
+													  uBordersII, dBordersII, lBordersII, rBordersII, 
+													  buffer, numberOfAnalyzers);
 }
 
 void A4Matcher::setAndAnalyseImage(IplImage *aimage)
@@ -350,9 +363,9 @@ void A4Matcher::applyA4SearchMask()
     int *datadBordersIIFactored = (int *)dBordersIIFactored->imageData;
     int *datalBordersIIFactored = (int *)lBordersIIFactored->imageData;
     int *datarBordersIIFactored = (int *)rBordersIIFactored->imageData;
-    unsigned char *dataBuffer = (unsigned char *)buffer->imageData;
+    unsigned char *databufferFactored = (unsigned char *)bufferFactored->imageData;
 	int step = uBordersIIFactored->widthStep/sizeof(int);
-	int stepBuffer = buffer->widthStep/sizeof(char);
+	int stepbufferFactored = bufferFactored->widthStep/sizeof(char);
 
 	int searchWidth;
 	int searchHeight;
@@ -384,7 +397,7 @@ void A4Matcher::applyA4SearchMask()
 		{
 			for(int j = 0; j < sizeFactored.width - searchWidth - 2*safetyWidthMargin; ++j)
 			{
-				if(dataBuffer[i*stepBuffer + j] == 0)
+				if(databufferFactored[i*stepbufferFactored + j] == 0)
 				{
 					int whiteBodyBorders = pieceOfII(datauBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datadBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
@@ -429,7 +442,7 @@ void A4Matcher::applyA4SearchMask()
 										{
 											for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
 											{
-												overlap += dataBuffer[(i + k)*stepBuffer + j + l];
+												overlap += databufferFactored[(i + k)*stepbufferFactored + j + l];
 											}
 										}
 										if(overlap < (searchWidth + 2*safetyWidthMargin)*(searchHeight + 2*safetyHeightMargin)*3/4) 
@@ -449,7 +462,7 @@ void A4Matcher::applyA4SearchMask()
 											{
 												for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
 												{
-													dataBuffer[(i + k)*stepBuffer + j + l] = 1;
+													databufferFactored[(i + k)*stepbufferFactored + j + l] = 1;
 												}
 											}
 										}
