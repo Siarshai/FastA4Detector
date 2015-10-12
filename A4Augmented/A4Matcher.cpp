@@ -35,17 +35,6 @@ void A4Matcher::initMemory(CvSize size)
     greenChannelResizedTmp = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
     blueChannelResizedTmp = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 
-    redSobelH = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1); 
-    greenSobelH = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1); 
-    blueSobelH = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1);
-    redSobelV = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1);
-    greenSobelV = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1);
-    blueSobelV = cvCreateImage(sizeFactored, IPL_DEPTH_16S, 1);
-	
-    horizontalBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-    verticalBorders = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-
-
 	uBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
 	dBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
 	lBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
@@ -93,25 +82,6 @@ void A4Matcher::clearMemory()
 	if(blueChannelResizedTmp != nullptr)
 		cvReleaseImage(&blueChannelResizedTmp);
 	
-	if(redSobelH != nullptr)
-		cvReleaseImage(&redSobelH);
-	if(greenSobelH != nullptr)
-		cvReleaseImage(&greenSobelH);
-	if(blueSobelH != nullptr)
-		cvReleaseImage(&blueSobelH);
-
-	if(redSobelV != nullptr)
-		cvReleaseImage(&redSobelV);
-	if(greenSobelV != nullptr)
-		cvReleaseImage(&greenSobelV);
-	if(blueSobelV != nullptr)
-		cvReleaseImage(&blueSobelV);
-
-	if(horizontalBorders != nullptr)
-		cvReleaseImage(&horizontalBorders);
-	if(verticalBorders != nullptr)
-		cvReleaseImage(&verticalBorders);
-
 	if(uBorders != nullptr)
 		cvReleaseImage(&uBorders);
 	if(dBorders != nullptr)
@@ -694,28 +664,6 @@ void A4Matcher::applyDLCornerSearch()
     int step = imageResized->widthStep;
 	applyBaseCornerSearch(DLCorners, (uchar *)dBordersFactored->imageData, (uchar *)lBordersFactored->imageData, 1, -step);
 }
-
-/*
-void A4Matcher::analyseImage() 
-{
-	applyURCornerSearch();
-	applyULCornerSearch();
-	applyDRCornerSearch();
-	applyDLCornerSearch();
-
-	applyKernelSubroutine(this->ULCorners, kernelULCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasUL);
-	applyKernelSubroutine(this->URCorners, kernelURCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasUL);
-	applyKernelSubroutine(this->DLCorners, kernelDLCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasUL, swiftBiasDR);
-	applyKernelSubroutine(this->DRCorners, kernelDRCorner19Swift, swiftKernelSize, numberOfForegroundPixelsInSwiftKernel, numberOfBorderIntersectionPixelsInSwiftKernel, numberOfBorderPixelsInSwiftKernelPerSide, swiftBiasDR, swiftBiasDR);
-	
-	pointClusterifier.clasterifyList(this->ULCorners, -1, -1);
-	pointClusterifier.clasterifyList(this->URCorners,  1, -1);
-	pointClusterifier.clasterifyList(this->DLCorners, -1,  1);
-	pointClusterifier.clasterifyList(this->DRCorners,  1,  1);
-	
-}
-*/
-
 
 void A4Matcher::findCorners() 
 {

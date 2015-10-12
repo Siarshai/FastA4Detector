@@ -32,9 +32,7 @@ class A4Matcher
     IplImage *redChannel, *greenChannel, *blueChannel; //TODO: Theese may be optimized
     IplImage *redChannelResized, *greenChannelResized, *blueChannelResized;
     IplImage *redChannelResizedTmp, *greenChannelResizedTmp, *blueChannelResizedTmp;
-    IplImage *redSobelH, *greenSobelH, *blueSobelH, *redSobelV, *greenSobelV, *blueSobelV;
-	IplImage *horizontalBorders, *verticalBorders;
-	
+
 	IplImage *uBorders, *dBorders, *lBorders, *rBorders;
 	IplImage *uBordersII, *dBordersII, *lBordersII, *rBordersII;
 	
@@ -62,7 +60,6 @@ class A4Matcher
 	void applyA4SearchMask();
 	void findCorners();
 
-	//bool applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0);
 	bool applyBorderDetector(uchar *dataBorder, int step, int orthogonalStep, int borderLookupSize, int maxFails);
 
 	void addIntersectionsToCornersList();
