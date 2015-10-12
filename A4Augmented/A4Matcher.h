@@ -70,6 +70,7 @@ class A4Matcher
 
 	void addIntersectionsToCornersList();
 	void normalizePoints();
+	void findPreciseBorderAlignedLines();
 	bool findA4();
 	void clearResults();
 	void clearMemory();
@@ -87,7 +88,12 @@ public:
 		CvPoint drpt;
 		CvPoint ulptBorder;
 		CvPoint drptBorder;
-		A4PreDetectedRecord(CvPoint aulpt, CvPoint adrpt, CvPoint aulptBorder, CvPoint adrptBorder) : ulpt(aulpt), drpt(adrpt), ulptBorder(aulptBorder), drptBorder(adrptBorder) {}
+		int widthBorderBlock, heightBorderBlock;
+		int safetyWidthMargin, safetyHeightMargin;
+		A4PreDetectedRecord(CvPoint aulpt, CvPoint adrpt, CvPoint aulptBorder, CvPoint adrptBorder,
+			int awidthBorderBlock, int aheightBorderBlock, int asafetyWidthMargin, int asafetyHeightMargin) : 
+			ulpt(aulpt), drpt(adrpt), ulptBorder(aulptBorder), drptBorder(adrptBorder), 
+			widthBorderBlock(awidthBorderBlock), heightBorderBlock(aheightBorderBlock), safetyWidthMargin(asafetyWidthMargin), safetyHeightMargin(asafetyHeightMargin) {}
 	};
 	std::list<A4PreDetectedRecord> A4PreDetected;
 

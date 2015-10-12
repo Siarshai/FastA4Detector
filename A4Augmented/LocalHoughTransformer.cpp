@@ -8,6 +8,7 @@ void LocalHoughTransformer::reset(int awidth, int aheight, unsigned char *apictu
 	width = awidth;
 	height = aheight;
 	pictureSpace = apictureSpace;
+	clear();
 }
 
 
@@ -20,6 +21,7 @@ void LocalHoughTransformer::fullReset(int aminAngle, int amaxAngle, int awidth, 
 	maxRhoGlob = static_cast<int>( sqrtf(awidth*awidth + aheight*aheight) );
 	angleRangeGlob = maxAngleGlob - minAngleGlob;
 	parameterSpace.resize(2*maxRhoGlob*angleRangeGlob);
+	clear();
 }
 
 CvPoint LocalHoughTransformer::analyze()
@@ -35,7 +37,7 @@ CvPoint LocalHoughTransformer::analyze()
 			{
 				for(int alpha = minAngleGlob; alpha < maxAngleGlob; ++alpha) 
 				{
-					int rhoMod = static_cast<int>( -x*sin(alpha*M_PI/180.0) + y*cos(alpha*M_PI/180.0) + maxRhoGlob );
+					int rhoMod = static_cast<int>( -x*sin(alpha*M_PI/180.0) + y*cos(alpha*M_PI/180.0) + maxRhoGlob ); // TODO: without maxRhoGlob
 					int alphaMod = alpha - minAngleGlob;
 					for(int i = 0; i <= 0; ++i) //-2 2
 					{

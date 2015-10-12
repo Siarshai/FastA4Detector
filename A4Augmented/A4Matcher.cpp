@@ -325,8 +325,8 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 
 void A4Matcher::prepareDerivativesSearchTemplates()
 {	
-	const int numberOfAnalyzers = 5*resizeFactor*2/3; 
-	const int numberOfAnalyzersFactored = 5; //9
+	const int numberOfAnalyzers = 20; 
+	const int numberOfAnalyzersFactored = 20/resizeFactor; 
 
 	prepareDerivativesSearchTemplatesBase(redChannelResized, greenChannelResized, blueChannelResized, 
 													  uBordersFactored, dBordersFactored, lBordersFactored, rBordersFactored, 
@@ -345,11 +345,10 @@ void A4Matcher::setAndAnalyseImage(IplImage *aimage)
 	formatImage(aimage);
 	cvResize(image, imageResized);
 	channelSplit(aimage);
-	//applyColorInvalidator();
 	prepareDerivativesSearchTemplates();
-	//analyseImage();
 	applyA4SearchMask();
 	normalizePoints();
+	findPreciseBorderAlignedLines();
 }
 
 
@@ -387,9 +386,6 @@ void A4Matcher::applyA4SearchMask()
 	
 	int debug = 2;
 	const int minHeight = 20;
-	
-	lhtHor.fullReset(-20, 20, 4*widthBorderBlock, safetyHeightMargin, uBordersFactored->widthStep, NULL);
-	lhtVer.fullReset(-20, 20, 4*heightBorderBlock, safetyWidthMargin, uBordersFactored->widthStep, NULL);
 
 	while(searchHeight > minHeight) 
 	{
@@ -447,17 +443,13 @@ void A4Matcher::applyA4SearchMask()
 										}
 										if(overlap < (searchWidth + 2*safetyWidthMargin)*(searchHeight + 2*safetyHeightMargin)*3/4) 
 										{
-											lhtHor.reset(4*widthBorderBlock, 2*safetyHeightMargin, dataUBorders + i*uBordersFactored->widthStep + j);
-											CvPoint line = lhtHor.analyze();
-											line.y += -j*sin(line.x*M_PI/180.0) + i*cos(line.x*M_PI/180.0);
-											line.y *= resizeFactor;
-											line.y += resizeFactor/2;
-											testLines.push_back( line );
-
-											A4PreDetected.push_back(A4PreDetectedRecord(cvPoint(j + safetyWidthMargin, i + safetyHeightMargin), 
+											A4PreDetected.push_back(
+												A4PreDetectedRecord(cvPoint(j + safetyWidthMargin, i + safetyHeightMargin), 
 																						cvPoint(j + safetyWidthMargin + searchWidth, i + safetyHeightMargin + searchHeight),
 																						cvPoint(j, i),
-																						cvPoint(j + searchWidth + 2*safetyWidthMargin, i + searchHeight + 2*safetyHeightMargin)) );
+																						cvPoint(j + searchWidth + 2*safetyWidthMargin, i + searchHeight + 2*safetyHeightMargin),
+																						widthBorderBlock, heightBorderBlock, safetyWidthMargin, safetyHeightMargin)
+												);
 											for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
 											{
 												for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
@@ -482,6 +474,30 @@ void A4Matcher::applyA4SearchMask()
 		safetyHeightMargin = max(searchWidth/safetyMarginDivisor, kernelResolution);
 		widthBorderBlock = (searchWidth + 2*safetyWidthMargin)/4; //4 border blocks
 		heightBorderBlock = (searchHeight + 2*safetyHeightMargin)/4; //4 border blocks
+	}
+}
+
+
+void A4Matcher::findPreciseBorderAlignedLines()
+{
+	for(A4PreDetectedRecord a4pd : A4PreDetected)
+	{
+		int x = a4pd.ulpt.x;
+		int y = a4pd.ulpt.y;
+
+		int widthBorderBlock = a4pd.widthBorderBlock*resizeFactor;
+		int heightBorderBlock = a4pd.heightBorderBlock*resizeFactor;
+		int safetyWidthMargin = a4pd.safetyWidthMargin*resizeFactor;
+		int safetyHeightMargin = a4pd.safetyHeightMargin*resizeFactor;
+
+		unsigned char *dataUBorders = (unsigned char *)uBorders->imageData;
+
+		lhtHor.fullReset(-20, 20, 4*widthBorderBlock, 2*safetyHeightMargin, uBorders->widthStep, dataUBorders + y*uBorders->widthStep + x);
+		//lhtVer.fullReset(-20, 20, 4*heightBorderBlock, safetyWidthMargin, uBordersFactored->widthStep, NULL);
+
+		CvPoint line = lhtHor.analyze();
+		line.y += -x*sin(line.x*M_PI/180.0) + y*cos(line.x*M_PI/180.0); //? x -- y
+		testLines.push_back( line );
 	}
 }
 

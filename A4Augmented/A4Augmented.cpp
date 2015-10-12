@@ -76,6 +76,7 @@ int main(int argc, char** argv)
 		}
 		
 		
+		printf("lines %d\n", am.testLines.size());
 		CvPoint line = am.testLines.front();
 		int alpha = line.x;
 		int rho = -line.y;
