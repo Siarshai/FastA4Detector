@@ -10,6 +10,7 @@
 #include "LineClusterifier.h"
 #include "PointClusterifier.h"
 #include "BorderAnalyzer.h"
+#include "LocalHoughTransformer.h"
 
 
 class A4Matcher
@@ -18,14 +19,10 @@ class A4Matcher
 		CvPoint pt;
 		int n;
 	};
-	
-	std::list<CvPoint> ULCorners;
-	std::list<CvPoint> URCorners;
-	std::list<CvPoint> DLCorners;
-	std::list<CvPoint> DRCorners;
 
 	int resizeFactor;
 	CvSize mainSize;
+	CvSize sizeII;
 	CvSize sizeFactored;
 	CvSize sizeFactoredII;
 	IplImage *image, *imageResized;
@@ -40,9 +37,15 @@ class A4Matcher
 	
 	IplImage *uBorders, *dBorders, *lBorders, *rBorders;
 	IplImage *uBordersII, *dBordersII, *lBordersII, *rBordersII;
+	
+	IplImage *uBordersFactored, *dBordersFactored, *lBordersFactored, *rBordersFactored;
+	IplImage *uBordersIIFactored, *dBordersIIFactored, *lBordersIIFactored, *rBordersIIFactored;
 
 	IplImage *a4FoundMark;
 	IplImage *buffer;
+	
+	LocalHoughTransformer lhtHor;
+	LocalHoughTransformer lhtVer;
 	
 	void formatImage(IplImage *aimage);
 	void channelSplit(IplImage *aimage);
@@ -69,6 +72,12 @@ class A4Matcher
 	void clearMemory();
 
 public:
+	
+	std::list<CvPoint> ULCorners;
+	std::list<CvPoint> URCorners;
+	std::list<CvPoint> DLCorners;
+	std::list<CvPoint> DRCorners;
+	std::list<CvPoint> testLines;
 	
 	struct A4PreDetectedRecord {
 		CvPoint ulpt;
