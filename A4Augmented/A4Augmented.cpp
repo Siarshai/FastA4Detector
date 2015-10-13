@@ -26,7 +26,8 @@ int main(int argc, char** argv)
 			/*"images/clean/hou1.jpg", "images/clean/hou4.jpg", "images/clean/hou2.jpg", "images/clean/hou3.jpg", 
 			"images/clean/hou5.jpg", "images/clean/hou6.jpg", "images/clean/hou7.jpg", "images/clean/hou8.jpg", */
 			"images/garageH/1.JPG", "images/garageH/2.jpg", 
-			"images/garageH/3.jpg", "images/garageH/4.jpg", "images/garageH/5.jpg", "images/garageH/6.jpg",
+			"images/garageH/3.jpg", "images/garageH/4.jpg", 
+			"images/garageH/5.jpg", "images/garageH/6.jpg",
 			"images/garageV/1.jpg", "images/garageV/2.jpg", "images/garageV/3.jpg", "images/garageV/4.jpg", "images/garageV/5.jpg",
 			"images/own/1.JPG", "images/own/2.JPG", "images/own/3.JPG", "images/own/4.JPG", "images/own/5.JPG", "images/own/6.JPG" };
 		const int size = 17;
@@ -77,7 +78,7 @@ int main(int argc, char** argv)
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		/*
+		
 		if(am.testLines.size() > 0) 
 		{
 			printf("===\nlines %d\n", am.testLines.size());
@@ -107,11 +108,11 @@ int main(int argc, char** argv)
 		}
 		else
 			printf("WARNING: no lines detected\n");
-		*/
+	
 
 		for(CvPoint corner : am.testCorners)
 		{
-			printf("Corner %d %d", corner.x, corner.y);
+			printf("Corner %d %d\n", corner.x, corner.y);
 			cvDrawCircle(frame, corner, 1, CV_RGB(255, 0, 0), 2, 8, 0);
 		}
 		am.testCorners.clear();

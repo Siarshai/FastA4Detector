@@ -61,3 +61,22 @@ CvPoint lineIntersection(double alpha1, double rho1, double alpha2, double rho2)
 {
 	return lineIntersection( sin(alpha1), -cos(alpha1), rho1,  sin(alpha2), -cos(alpha2), rho2); 
 }
+
+bool horizontalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step)
+{
+	int borderPixels1b = pieceOfII(dataII, x,				   y, searchWidth, searchHeight, step); 
+	int borderPixels2b = pieceOfII(dataII, x +   searchWidth,  y, searchWidth, searchHeight, step);
+	int borderPixels3b = pieceOfII(dataII, x + 2*searchWidth,  y, searchWidth, searchHeight, step);
+	int borderPixels4b = pieceOfII(dataII, x + 3*searchWidth,  y, searchWidth, searchHeight, step);
+	return blockThreshold(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, searchWidth*255/searchHeight*4/5);
+}
+
+
+bool verticalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step)
+{
+	int borderPixels1b = pieceOfII(dataII, x,  y,					searchWidth, searchHeight, step); 
+	int borderPixels2b = pieceOfII(dataII, x,  y + searchHeight,    searchWidth, searchHeight, step);
+	int borderPixels3b = pieceOfII(dataII, x,  y + 2*searchHeight,  searchWidth, searchHeight, step);
+	int borderPixels4b = pieceOfII(dataII, x,  y + 3*searchHeight,  searchWidth, searchHeight, step);
+	return blockThreshold(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, searchWidth*255/searchHeight*4/5);
+}

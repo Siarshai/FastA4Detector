@@ -343,7 +343,6 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 													  uBordersII, dBordersII, lBordersII, rBordersII, 
 													  buffer, numberOfAnalyzers);
 	
-	/*
 	cvShowImage("ubord", uBorders);
 	cvShowImage("dbord", dBorders);
 	cvShowImage("lbord", lBorders);
@@ -352,9 +351,7 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 	cvShowImage("dBordersFactored", dBordersFactored);
 	cvShowImage("lBordersFactored", lBordersFactored);
 	cvShowImage("rBordersFactored", rBordersFactored);
-	char c = cvWaitKey(100000);
-	*/
-	
+	//char c = cvWaitKey(100000);
 }
 
 void A4Matcher::setAndAnalyseImage(IplImage *aimage)
@@ -417,39 +414,15 @@ void A4Matcher::applyA4SearchMask()
 					whiteBodyBorders += pieceOfII(datadBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datarBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datalBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
-					if(whiteBodyBorders < 400*255) //!
+					if(whiteBodyBorders < 50*255) // <<<
 					{ 
-						//TODO: make it constant
-						//printf("wb %d %d\n", j, i);
-
-						int borderPixels1b = pieceOfII(datauBordersIIFactored, j,						i, widthBorderBlock, safetyHeightMargin, step); 
-						int borderPixels2b = pieceOfII(datauBordersIIFactored, j +   widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
-						int borderPixels3b = pieceOfII(datauBordersIIFactored, j + 2*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
-						int borderPixels4b = pieceOfII(datauBordersIIFactored, j + 3*widthBorderBlock,  i, widthBorderBlock, safetyHeightMargin, step);
-						if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255/safetyHeightMargin*4/5) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+						if(horizontalBlockPassII(datauBordersIIFactored, j, i, widthBorderBlock, safetyHeightMargin, step))
 						{
-							//printf("ubord %d %d\n", j, i);
-					
-							borderPixels1b = pieceOfII(datalBordersIIFactored, j, i,					   safetyWidthMargin, heightBorderBlock, step); 
-							borderPixels2b = pieceOfII(datalBordersIIFactored, j, i +   heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-							borderPixels3b = pieceOfII(datalBordersIIFactored, j, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-							borderPixels4b = pieceOfII(datalBordersIIFactored, j, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-					
-							if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255/safetyWidthMargin*4/5) ) //borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+							if(verticalBlockPassII(datalBordersIIFactored, j, i, safetyWidthMargin, heightBorderBlock, step))
 							{
-								borderPixels1b = pieceOfII(datadBordersIIFactored, j,						i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step); 
-								borderPixels2b = pieceOfII(datadBordersIIFactored, j +   widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
-								borderPixels3b = pieceOfII(datadBordersIIFactored, j + 2*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);
-								borderPixels4b = pieceOfII(datadBordersIIFactored, j + 3*widthBorderBlock,  i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step);	
-
-								if( blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, widthBorderBlock*255/safetyHeightMargin*4/5) ) //borderPixels1b > widthBorderBlock && borderPixels2b > widthBorderBlock && borderPixels3b > widthBorderBlock && borderPixels4b > widthBorderBlock)
+								if( horizontalBlockPassII(datadBordersIIFactored, j, i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step) )
 								{
-									borderPixels1b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i,					     safetyWidthMargin, heightBorderBlock, step); 
-									borderPixels2b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i +   heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-									borderPixels3b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i + 2*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-									borderPixels4b = pieceOfII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i + 3*heightBorderBlock, safetyWidthMargin, heightBorderBlock, step);
-								
-									if(blockPass(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, heightBorderBlock*255/safetyWidthMargin*4/5)) //( borderPixels1b > heightBorderBlock && borderPixels2b > heightBorderBlock && borderPixels3b > heightBorderBlock && borderPixels4b > heightBorderBlock)
+									if( verticalBlockPassII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i, safetyWidthMargin, heightBorderBlock, step) )
 									{
 										int overlap = 0;
 										for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
@@ -499,7 +472,10 @@ void A4Matcher::applyA4SearchMask()
 CvPoint A4Matcher::findPreciseBorderAlignedLinesFindLineSubroutine(unsigned char *dataOrigin, int step, int xOffset, int yOffset)
 {
 	lhtHor.setPictureSpace(dataOrigin + yOffset*step + xOffset);
-	CvPoint line = lhtHor.analyze();
+	CvPoint line;
+	try {
+		line = lhtHor.analyze();
+	} catch(...) { throw; }
 	line.y += -xOffset*sin(line.x*M_PI/180.0) + yOffset*cos(line.x*M_PI/180.0);
 	return line;
 }
@@ -525,31 +501,48 @@ void A4Matcher::findPreciseBorderAlignedLines()
 		CvPoint lineHorUL, lineHorUR, lineHorDL, lineHorDR;
 		CvPoint lineVerUL, lineVerUR, lineVerDL, lineVerDR;
 		lhtHor.fullReset(-20, 20, 2*widthBorderBlock, 2*safetyHeightMargin, step, NULL);
-
-		lineHorUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x, y);
+		
+		//TODO: correct handling
+		try {
+			lineHorUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x, y);
+		} catch(...) {  }
 		testLines.push_back( lineHorUL );
 		
-		lineHorUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x + 2*widthBorderBlock, y);
+		try {
+			lineHorUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x + 2*widthBorderBlock, y);
+		} catch(...) {  }
 		testLines.push_back( lineHorUR );
 		
-		lineHorDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		try {
+			lineHorDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		} catch(...) {  }
 		testLines.push_back( lineHorDL );
 		
-		lineHorDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x + 2*widthBorderBlock, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		try {
+			lineHorDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x + 2*widthBorderBlock, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		} catch(...) {  }
 		testLines.push_back( lineHorDR );
 		
 		lhtHor.fullReset(70, 110, 2*safetyWidthMargin, 2*heightBorderBlock, step, NULL);
-
-		lineVerUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y);
+		
+		try {
+			lineVerUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y);
+		} catch(...) {  }
 		testLines.push_back( lineVerUL );
 		
-		lineVerDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y + 2*heightBorderBlock);
+		try {
+			lineVerDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y + 2*heightBorderBlock);
+		} catch(...) {  }
 		testLines.push_back( lineVerDL );
 		
-		lineVerUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y);
+		try {
+			lineVerUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y);
+		} catch(...) {  }
 		testLines.push_back( lineVerUR );
 		
-		lineVerDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y + 2*heightBorderBlock);
+		try {
+			lineVerDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y + 2*heightBorderBlock);
+		} catch(...) {  }
 		testLines.push_back( lineVerDR );
 		
 		CvPoint cornerUL = lineIntersection(lineHorUL.x*M_PI/180, -lineHorUL.y, lineVerUL.x*M_PI/180, -lineVerUL.y);

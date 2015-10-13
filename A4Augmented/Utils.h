@@ -20,6 +20,8 @@ double matchForegroundTrimBlack(unsigned int pixel, unsigned int meanForeground,
 unsigned int distanceManhattan(CvPoint pt1, CvPoint pt2);
 CvPoint lineIntersection(double a1, double b1, double c1, double a2, double b2, double c2);
 CvPoint lineIntersection(double alpha1, double rho1, double alpha2, double rho2);
+bool horizontalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step);
+bool verticalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step);
 
 template<typename T>
 T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
@@ -31,7 +33,7 @@ T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
 }
 
 template<typename T>
-int blockPass(T val1, T val2, T val3, T val4, T threshold)
+bool blockThreshold(T val1, T val2, T val3, T val4, T threshold)
 {
 	int res = 0;
 	if(val1 >= threshold)

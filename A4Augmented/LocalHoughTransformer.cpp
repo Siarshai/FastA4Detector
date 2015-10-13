@@ -70,8 +70,7 @@ CvPoint LocalHoughTransformer::analyze()
 	}
 	if(maxVal == -1)
 	{
-		printf(" =( \n");
-		exit(413);
+		throw new std::exception("No lines detected");
 	}
 	clear();
 	return cvPoint(maxAlpha + minAngleGlob, maxRho - maxRhoGlob);
