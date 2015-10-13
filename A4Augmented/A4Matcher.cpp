@@ -227,7 +227,7 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 
 	//Calculating borders with state-keeptin border analyzer
 	int numberOfOk;
-	vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/2));
+	vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/4));
 	//BorderAnalyzer ba[numberOfAnalyzers];
 
 	//Zerofying. May be optimized.
@@ -330,7 +330,7 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 
 void A4Matcher::prepareDerivativesSearchTemplates()
 {	
-	const int numberOfAnalyzers = 36; 
+	const int numberOfAnalyzers = 44; 
 	const int numberOfAnalyzersFactored = numberOfAnalyzers/resizeFactor; 
 
 	prepareDerivativesSearchTemplatesBase(redChannelResized, greenChannelResized, blueChannelResized, 
@@ -343,6 +343,7 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 													  uBordersII, dBordersII, lBordersII, rBordersII, 
 													  buffer, numberOfAnalyzers);
 	
+	/*
 	cvShowImage("ubord", uBorders);
 	cvShowImage("dbord", dBorders);
 	cvShowImage("lbord", lBorders);
@@ -352,6 +353,7 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 	cvShowImage("lBordersFactored", lBordersFactored);
 	cvShowImage("rBordersFactored", rBordersFactored);
 	char c = cvWaitKey(100000);
+	*/
 	
 }
 
@@ -494,6 +496,14 @@ void A4Matcher::applyA4SearchMask()
 }
 
 
+CvPoint A4Matcher::findPreciseBorderAlignedLinesFindLineSubroutine(unsigned char *dataOrigin, int step, int xOffset, int yOffset)
+{
+	lhtHor.setPictureSpace(dataOrigin + yOffset*step + xOffset);
+	CvPoint line = lhtHor.analyze();
+	line.y += -xOffset*sin(line.x*M_PI/180.0) + yOffset*cos(line.x*M_PI/180.0);
+	return line;
+}
+
 void A4Matcher::findPreciseBorderAlignedLines()
 {
 	for(A4PreDetectedRecord a4pd : A4PreDetected)
@@ -505,15 +515,59 @@ void A4Matcher::findPreciseBorderAlignedLines()
 		int heightBorderBlock = a4pd.heightBorderBlock*resizeFactor;
 		int safetyWidthMargin = a4pd.safetyWidthMargin*resizeFactor;
 		int safetyHeightMargin = a4pd.safetyHeightMargin*resizeFactor;
-
+		
 		unsigned char *dataUBorders = (unsigned char *)uBorders->imageData;
+		unsigned char *dataDBorders = (unsigned char *)dBorders->imageData;
+		unsigned char *dataLBorders = (unsigned char *)lBorders->imageData;
+		unsigned char *dataRBorders = (unsigned char *)rBorders->imageData;
+		int step = uBorders->widthStep;
+		
+		CvPoint lineHorUL, lineHorUR, lineHorDL, lineHorDR;
+		CvPoint lineVerUL, lineVerUR, lineVerDL, lineVerDR;
+		lhtHor.fullReset(-20, 20, 2*widthBorderBlock, 2*safetyHeightMargin, step, NULL);
 
-		lhtHor.fullReset(-20, 20, 4*widthBorderBlock, 2*safetyHeightMargin, uBorders->widthStep, dataUBorders + y*uBorders->widthStep + x);
-		//lhtVer.fullReset(-20, 20, 4*heightBorderBlock, safetyWidthMargin, uBordersFactored->widthStep, NULL);
+		lineHorUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x, y);
+		testLines.push_back( lineHorUL );
+		
+		lineHorUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x + 2*widthBorderBlock, y);
+		testLines.push_back( lineHorUR );
+		
+		lineHorDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		testLines.push_back( lineHorDL );
+		
+		lineHorDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x + 2*widthBorderBlock, y + 4*heightBorderBlock - 2*safetyHeightMargin);
+		testLines.push_back( lineHorDR );
+		
+		lhtHor.fullReset(70, 110, 2*safetyWidthMargin, 2*heightBorderBlock, step, NULL);
 
-		CvPoint line = lhtHor.analyze();
-		line.y += -x*sin(line.x*M_PI/180.0) + y*cos(line.x*M_PI/180.0); //? x -- y
-		testLines.push_back( line );
+		lineVerUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y);
+		testLines.push_back( lineVerUL );
+		
+		lineVerDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y + 2*heightBorderBlock);
+		testLines.push_back( lineVerDL );
+		
+		lineVerUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y);
+		testLines.push_back( lineVerUR );
+		
+		lineVerDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y + 2*heightBorderBlock);
+		testLines.push_back( lineVerDR );
+		
+		CvPoint cornerUL = lineIntersection(lineHorUL.x*M_PI/180, -lineHorUL.y, lineVerUL.x*M_PI/180, -lineVerUL.y);
+		CvPoint cornerUR = lineIntersection(lineHorUR.x*M_PI/180, -lineHorUR.y, lineVerUR.x*M_PI/180, -lineVerUR.y);
+		CvPoint cornerDL = lineIntersection(lineHorDL.x*M_PI/180, -lineHorDL.y, lineVerDL.x*M_PI/180, -lineVerDL.y);
+		CvPoint cornerDR = lineIntersection(lineHorDR.x*M_PI/180, -lineHorDR.y, lineVerDR.x*M_PI/180, -lineVerDR.y);
+		testCorners.push_back( cornerUL );
+		testCorners.push_back( cornerUR );
+		testCorners.push_back( cornerDL );
+		testCorners.push_back( cornerDR );
+
+		foundA4.push_back( A4Record(cornerUL, cornerUR, cornerDL, cornerDR) );
+
+		/*
+		cvDrawRect(image,   cvPoint(x + 4*widthBorderBlock - 2*safetyWidthMargin, y), 
+							cvPoint(x + 4*widthBorderBlock, y + 2*heightBorderBlock), CV_RGB(255, 255, 255), 1, 8, 0);
+		cvShowImage("image", image);
+		*/
 	}
 }
 

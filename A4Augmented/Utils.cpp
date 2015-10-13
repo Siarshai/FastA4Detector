@@ -45,3 +45,19 @@ unsigned int distanceManhattan(CvPoint pt1, CvPoint pt2)
 {
 	return abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
 }
+
+
+CvPoint lineIntersection(double a1, double b1, double c1, double a2, double b2, double c2)
+{
+	double det = a1*b2 - b1*a2;
+	double det1 = c1*b2 - b1*c2;
+	double det2 = a1*c2 - c1*a2;
+	double x = det1/det;
+	double y = det2/det;
+	return cvPoint(x, y);
+}
+
+CvPoint lineIntersection(double alpha1, double rho1, double alpha2, double rho2)
+{
+	return lineIntersection( sin(alpha1), -cos(alpha1), rho1,  sin(alpha2), -cos(alpha2), rho2); 
+}

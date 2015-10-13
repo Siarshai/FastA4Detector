@@ -71,6 +71,7 @@ class A4Matcher
 	void addIntersectionsToCornersList();
 	void normalizePoints();
 	void findPreciseBorderAlignedLines();
+	CvPoint findPreciseBorderAlignedLinesFindLineSubroutine(unsigned char *dataOrigin, int step, int xOffset, int yOffset);
 	bool findA4();
 	void clearResults();
 	void clearMemory();
@@ -82,6 +83,7 @@ public:
 	std::list<CvPoint> DLCorners;
 	std::list<CvPoint> DRCorners;
 	std::list<CvPoint> testLines;
+	std::list<CvPoint> testCorners;
 	
 	struct A4PreDetectedRecord {
 		CvPoint ulpt;

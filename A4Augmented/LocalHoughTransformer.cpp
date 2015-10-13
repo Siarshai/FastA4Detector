@@ -3,6 +3,13 @@
 
 LocalHoughTransformer::LocalHoughTransformer() {}
 
+
+void LocalHoughTransformer::setPictureSpace(unsigned char *apictureSpace)
+{
+	pictureSpace = apictureSpace;
+	clear();
+}
+
 void LocalHoughTransformer::reset(int awidth, int aheight, unsigned char *apictureSpace)
 {
 	width = awidth;
@@ -14,7 +21,9 @@ void LocalHoughTransformer::reset(int awidth, int aheight, unsigned char *apictu
 
 void LocalHoughTransformer::fullReset(int aminAngle, int amaxAngle, int awidth, int aheight, int astep, unsigned char *apictureSpace)
 {
-	reset(awidth, aheight, apictureSpace);
+	width = awidth;
+	height = aheight;
+	pictureSpace = apictureSpace;
 	minAngleGlob = aminAngle;
 	maxAngleGlob = amaxAngle;
 	step = astep;

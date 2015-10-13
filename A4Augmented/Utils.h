@@ -17,9 +17,9 @@ double darknessThresholdPenalty(unsigned char R, unsigned char G, unsigned char 
 double darkness(unsigned char R, unsigned char G, unsigned char B);
 double colorfulness(unsigned char R, unsigned char G, unsigned char B);
 double matchForegroundTrimBlack(unsigned int pixel, unsigned int meanForeground, double standartDeviation);
-
 unsigned int distanceManhattan(CvPoint pt1, CvPoint pt2);
-
+CvPoint lineIntersection(double a1, double b1, double c1, double a2, double b2, double c2);
+CvPoint lineIntersection(double alpha1, double rho1, double alpha2, double rho2);
 
 template<typename T>
 T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
