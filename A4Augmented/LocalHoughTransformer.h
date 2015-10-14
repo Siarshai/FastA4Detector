@@ -2,7 +2,6 @@
 #define LOCAL_HOUGH_TRANSFORMER
 
 #include "Utils.h"
-#include <vector>
 
 using std::vector;
 using std::max;

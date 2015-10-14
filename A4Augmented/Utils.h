@@ -13,6 +13,9 @@
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/contrib/contrib.hpp"
 
+#include <vector>
+
+
 double darknessThresholdPenalty(unsigned char R, unsigned char G, unsigned char B);
 double darkness(unsigned char R, unsigned char G, unsigned char B);
 double colorfulness(unsigned char R, unsigned char G, unsigned char B);

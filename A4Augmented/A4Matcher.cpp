@@ -226,8 +226,7 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 	int tmpU8;
 
 	//Calculating borders with state-keeptin border analyzer
-	int numberOfOk;
-	vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/4));
+	//vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/4));
 	//BorderAnalyzer ba[numberOfAnalyzers];
 
 	//Zerofying. May be optimized.
@@ -244,87 +243,31 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 		}
 	}
 
-    for (int j = numberOfAnalyzers/2; j < width-numberOfAnalyzers/2; ++j) 
-	{
-		for(auto b = ba.begin(); b != ba.end(); ++b)
-			(*b).invalidate();
-		//for(int k = 0; k < numberOfAnalyzers; ++k)
-		//	ba[k].invalidate();
-
+	ChoirOfBorderAnalyzers cba(numberOfAnalyzers, numberOfAnalyzers/4, numberOfAnalyzers*3/4);
+	
+    for (int j = numberOfAnalyzers/2; j < width-numberOfAnalyzers/2; ++j) {
 		for (int i = height - 1 - numberOfAnalyzers/2; i >= numberOfAnalyzers/2; --i) 
-		{
-			numberOfOk = 0;
-			tmpU8 = i*stepU8 + j;
-			for(int k = 0; k < numberOfAnalyzers; ++k)
-				numberOfOk += ba[k].analyze(dataRed[tmpU8 - 2 + k], dataGreen[tmpU8 - 2 + k], dataBlue[tmpU8 - 2 + k]);
-			if(numberOfOk > numberOfAnalyzers*3/4) {
-				dataUBorders[tmpU8] = 255;
-				for(auto b = ba.begin(); b != ba.end(); ++b)
-					(*b).invalidate();
-			} else
-				dataUBorders[tmpU8] = 0;
-		}
-
-		for(int k = 0; k < numberOfAnalyzers; ++k)
-			ba[k].invalidate();
-
+			cba.response(i*stepU8 + j, 1, dataRed, dataGreen, dataBlue, dataUBorders);
+		cba.invalidate();
 		for (int i = numberOfAnalyzers/2; i < height - numberOfAnalyzers/2; ++i) 
-		{
-			numberOfOk = 0;
-			tmpU8 = i*stepU8 + j;
-			for(int k = 0; k < numberOfAnalyzers; ++k)
-				numberOfOk += ba[k].analyze(dataRed[tmpU8 - 2 + k], dataGreen[tmpU8 - 2 + k], dataBlue[tmpU8 - 2 + k]);
-			if(numberOfOk > numberOfAnalyzers*3/4) {
-				dataDBorders[tmpU8] = 255;
-				for(auto b = ba.begin(); b != ba.end(); ++b)
-					(*b).invalidate();
-			} else
-				dataDBorders[tmpU8] = 0;
-		}
+			cba.response(i*stepU8 + j, 1, dataRed, dataGreen, dataBlue, dataDBorders);
+		cba.invalidate();
 	}
+
 	for (int i = numberOfAnalyzers/2; i < height - numberOfAnalyzers/2; ++i) 
-	{	
-		for(int k = 0; k < numberOfAnalyzers; ++k)
-			ba[k].invalidate();
-
+	{
 		for (int j = numberOfAnalyzers/2; j < width - numberOfAnalyzers/2; ++j) 
-		{
-			numberOfOk = 0;
-			tmpU8 = i*stepU8 + j;
-			for(int k = 0; k < numberOfAnalyzers; ++k)
-				numberOfOk += ba[k].analyze(dataRed[tmpU8 + (-2 + k)*stepU8], dataGreen[tmpU8 + (-2 + k)*stepU8], dataBlue[tmpU8 + (-2 + k)*stepU8]);
-			if(numberOfOk > numberOfAnalyzers*3/4) {
-				dataRBorders[tmpU8] = 255;
-				for(auto b = ba.begin(); b != ba.end(); ++b)
-					(*b).invalidate();
-			} else
-				dataRBorders[tmpU8] = 0;
-		}
-
-		for(int k = 0; k < numberOfAnalyzers; ++k)
-			ba[k].invalidate();
-
+			cba.response(i*stepU8 + j, stepU8, dataRed, dataGreen, dataBlue, dataRBorders);
+		cba.invalidate();
 		for (int j = width - 1 - numberOfAnalyzers/2; j >= numberOfAnalyzers/2; --j) 
-		{
-			numberOfOk = 0;
-			tmpU8 = i*stepU8 + j;
-			for(int k = 0; k < numberOfAnalyzers; ++k)
-				numberOfOk += ba[k].analyze(dataRed[tmpU8 + (-2 + k)*stepU8], dataGreen[tmpU8 + (-2 + k)*stepU8], dataBlue[tmpU8 + (-2 + k)*stepU8]);
-			if(numberOfOk > numberOfAnalyzers*3/4) {
-				dataLBorders[tmpU8] = 255;
-				for(auto b = ba.begin(); b != ba.end(); ++b)
-					(*b).invalidate();
-			} else
-				dataLBorders[tmpU8] = 0;
-		}
+			cba.response(i*stepU8 + j, stepU8, dataRed, dataGreen, dataBlue, dataLBorders);
+		cba.invalidate();
 	}
 	
 	cvIntegral(ubord, ubordII);
 	cvIntegral(dbord, dbordII);
 	cvIntegral(lbord, lbordII);
 	cvIntegral(rbord, rbordII);
-
-    //char act = cvWaitKey(100000);
 }
 
 
