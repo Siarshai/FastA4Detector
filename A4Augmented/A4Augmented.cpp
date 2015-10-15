@@ -64,60 +64,61 @@ int main(int argc, char** argv)
 			
 		am.setAndAnalyseImage(frame);
 		
-		/*
-		for(std::list<A4Matcher::A4Record>::iterator it = am.foundA4.begin(); it != am.foundA4.end(); ++it) {
-			cvDrawLine(frame, (*it).DL, (*it).DR, CV_RGB(0, 255, 0), 2, 8, 0);
-			cvDrawLine(frame, (*it).DR, (*it).UR, CV_RGB(0, 255, 0), 2, 8, 0);
-			cvDrawLine(frame, (*it).UR, (*it).UL, CV_RGB(0, 255, 0), 2, 8, 0);
-			cvDrawLine(frame, (*it).UL, (*it).DL, CV_RGB(0, 255, 0), 2, 8, 0);
-		}
-		*/
-		
-		for(std::list<A4Matcher::A4PreDetectedRecord>::iterator it = am.A4PreDetected.begin(); it != am.A4PreDetected.end(); ++it) {
+		for(std::list<A4PreDetectedRecord>::iterator it = am.A4PreDetected.begin(); it != am.A4PreDetected.end(); ++it) {
 			cvDrawRect(frame, (*it).ulpt, (*it).drpt, CV_RGB(0, 0, 255), 1, 8, 0);
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		
-		if(am.testLines.size() > 0) 
+		for(A4PreciseDetectedRecord pdr : am.A4PreciseDetected)
 		{
-			printf("===\nlines %d\n", am.testLines.size());
-			for(CvPoint line : am.testLines)
-			{
-				int alpha = line.x;
-				int rho = -line.y;
-				printf("alpha %d, rho %d\n", alpha, rho);
-				CvPoint pt1;
-				CvPoint pt2;
-				if(alpha == 0) 
-				{
-					pt1 = cvPoint(0, -rho);
-					pt2 = cvPoint(frame->width, -rho); 
-				} else if(alpha == 90)
-				{
-					pt1 = cvPoint(rho, 0);
-					pt2 = cvPoint(rho, frame->height);
-				} else
-				{
-					pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
-					pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frame->height)/sin(alpha*M_PI/180.0) , frame->height);
-				}
-				cvDrawLine(frame, pt1, pt2, CV_RGB(0, 200, 0), 1, 8, 0);
-			}
-			am.testLines.clear();
+			cvDrawCircle(frame, pdr.UR, 1, CV_RGB(255, 0, 0), 2, 8, 0);
+			cvDrawCircle(frame, pdr.UL, 1, CV_RGB(255, 0, 0), 2, 8, 0);
+			cvDrawCircle(frame, pdr.DL, 1, CV_RGB(255, 0, 0), 2, 8, 0);
+			cvDrawCircle(frame, pdr.DR, 1, CV_RGB(255, 0, 0), 2, 8, 0);
+			//cvDrawLine(frame, pt1, pt2, CV_RGB(0, 200, 0), 1, 8, 0);
+			#ifdef DEBUG_LINES_INFORMATION
+			auto twoPoints = fromLineToTwoPoints(pdr.lineHorDL, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineHorDR, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineHorUL, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineHorUR, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineVerDL, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineVerDR, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineVerUL, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			twoPoints = fromLineToTwoPoints(pdr.lineVerUR, frame->width, frame->height);
+			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
+			#endif DEBUG_LINES_INFORMATION
 		}
-		else
-			printf("WARNING: no lines detected\n");
-	
-
-		for(CvPoint corner : am.testCorners)
-		{
-			printf("Corner %d %d\n", corner.x, corner.y);
-			cvDrawCircle(frame, corner, 1, CV_RGB(255, 0, 0), 2, 8, 0);
-		}
-		am.testCorners.clear();
+		am.clearResults();
 
         cvShowImage("frame", frame);
+
+		/*
+					int alpha = line.x;
+			int rho = -line.y;
+			printf("alpha %d, rho %d\n", alpha, rho);
+			CvPoint pt1;
+			CvPoint pt2;
+			if(alpha == 0) 
+			{
+				pt1 = cvPoint(0, -rho);
+				pt2 = cvPoint(frame->width, -rho); 
+			} else if(alpha == 90)
+			{
+				pt1 = cvPoint(rho, 0);
+				pt2 = cvPoint(rho, frame->height);
+			} else
+			{
+				pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
+				pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frame->height)/sin(alpha*M_PI/180.0) , frame->height);
+			}
+			*/
 		
 		#ifdef FROM_PICTURES
 			char c = cvWaitKey(100000);

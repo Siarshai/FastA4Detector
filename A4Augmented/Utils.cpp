@@ -80,3 +80,26 @@ bool verticalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchH
 	int borderPixels4b = pieceOfII(dataII, x,  y + 3*searchHeight,  searchWidth, searchHeight, step);
 	return blockThreshold(borderPixels1b, borderPixels2b, borderPixels3b, borderPixels4b, searchWidth*255/searchHeight*4/5);
 }
+
+
+std::pair<CvPoint, CvPoint> fromLineToTwoPoints(CvPoint& line, int frameWidth, int frameHeight)
+{
+	int alpha = line.x;
+	int rho = -line.y;
+	CvPoint pt1;
+	CvPoint pt2;
+	if(alpha == 0) 
+	{
+		pt1 = cvPoint(0, -rho);
+		pt2 = cvPoint(frameWidth, -rho); 
+	} else if(alpha == 90)
+	{
+		pt1 = cvPoint(rho, 0);
+		pt2 = cvPoint(rho, frameHeight);
+	} else
+	{
+		pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
+		pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frameHeight)/sin(alpha*M_PI/180.0), frameHeight);
+	}
+	return std::pair<CvPoint, CvPoint>(pt1, pt2);
+}

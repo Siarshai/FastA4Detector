@@ -20,25 +20,21 @@ void A4Matcher::initMemory(CvSize size)
 
 	//Resetting memory banks
 	//Main image
-    image = cvCreateImage(size, IPL_DEPTH_8U, 1);
+    image = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
     imageResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1); //make lesser?
 	
-    redChannel = cvCreateImage(size, IPL_DEPTH_8U, 1); //TODO: get rid of them
-    greenChannel = cvCreateImage(size, IPL_DEPTH_8U, 1);
-    blueChannel = cvCreateImage(size, IPL_DEPTH_8U, 1);
+    redChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1); //TODO: get rid of them
+    greenChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
+    blueChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
 
     redChannelResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
     greenChannelResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
     blueChannelResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 
-    redChannelResizedTmp = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-    greenChannelResizedTmp = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-    blueChannelResizedTmp = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
-
-	uBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
-	dBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
-	lBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
-	rBorders = cvCreateImage(size, IPL_DEPTH_8U, 1);
+	uBorders = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
+	dBorders = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
+	lBorders = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
+	rBorders = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
 	
 	uBordersII = cvCreateImage(sizeII, IPL_DEPTH_32S, 1);
 	dBordersII = cvCreateImage(sizeII, IPL_DEPTH_32S, 1);
@@ -55,7 +51,7 @@ void A4Matcher::initMemory(CvSize size)
 	lBordersIIFactored = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
 	rBordersIIFactored = cvCreateImage(sizeFactoredII, IPL_DEPTH_32S, 1);
 	
-    buffer = cvCreateImage(size, IPL_DEPTH_8U, 1);
+    buffer = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
     bufferFactored = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1);
 }
 
@@ -74,13 +70,6 @@ void A4Matcher::clearMemory()
 		cvReleaseImage(&greenChannelResized);
 	if(blueChannelResized != nullptr)
 		cvReleaseImage(&blueChannelResized);
-
-	if(redChannelResizedTmp != nullptr)
-		cvReleaseImage(&redChannelResizedTmp);
-	if(greenChannelResizedTmp != nullptr)
-		cvReleaseImage(&greenChannelResizedTmp);
-	if(blueChannelResizedTmp != nullptr)
-		cvReleaseImage(&blueChannelResizedTmp);
 	
 	if(uBorders != nullptr)
 		cvReleaseImage(&uBorders);
@@ -151,55 +140,14 @@ void A4Matcher::channelSplit(IplImage *aimage)
 {
 	cvSplit(aimage, redChannel, greenChannel, blueChannel, NULL);
 	
-	cvResize(redChannel, redChannelResized); //cvPyrDown
+	cvResize(redChannel, redChannelResized);
 	cvResize(greenChannel, greenChannelResized);
 	cvResize(blueChannel, blueChannelResized);
-	
-	cvSmooth(redChannelResized, redChannelResizedTmp, CV_MEDIAN, 1);
-	cvSmooth(greenChannelResized, greenChannelResizedTmp, CV_MEDIAN, 1);
-	cvSmooth(blueChannelResized, blueChannelResizedTmp, CV_MEDIAN, 1);
-	
-	cvSmooth(redChannelResizedTmp, redChannelResized, CV_MEDIAN, 3);
-	cvSmooth(greenChannelResizedTmp, greenChannelResized, CV_MEDIAN, 3);
-	cvSmooth(blueChannelResizedTmp, blueChannelResized, CV_MEDIAN, 3);
-	/*
-	cvEqualizeHist( redChannelResizedTmp, redChannelResized );
-	cvEqualizeHist( greenChannelResizedTmp, greenChannelResized );
-	cvEqualizeHist( blueChannelResizedTmp, blueChannelResized );
-	*/
+
+	cvSmooth(redChannelResized, redChannelResized, CV_MEDIAN, 3);
+	cvSmooth(greenChannelResized, greenChannelResized, CV_MEDIAN, 3);
+	cvSmooth(blueChannelResized, blueChannelResized, CV_MEDIAN, 3);
 }
-
-
-void A4Matcher::applyColorInvalidator()
-{
-	//Manually filtering source image because OpenCV's native functions are too slow and require too much memory
-	//Gray regions become white, colorful regions become black. Dark regions become even darker.
-
-	uchar *grayData = (uchar *)imageResized->imageData;
-    int grayStep = imageResized->widthStep;
-
-    uchar *dataR = (uchar *)redChannelResized->imageData;
-    uchar *dataG = (uchar *)greenChannelResized->imageData;
-    uchar *dataB = (uchar *)blueChannelResized->imageData;
-    int step = redChannelResized->widthStep;
-	uchar newVal;
-	int idx;
-
-    for (int i = 0; i < redChannelResized->height; i++) 
-	{
-        for (int j = 0; j < redChannelResized->width; j++) 
-		{
-			idx = i*step+j;
-			unsigned char B = dataR[idx];
-			unsigned char G = dataG[idx];
-			unsigned char R = dataB[idx];
-			newVal = std::max(255 - static_cast<int>( darkness(R, G, B)*colorfulness(R, G, B) ), 0);
-			newVal = static_cast<unsigned char>(darknessThresholdPenalty(R, G, B)*newVal);
-			grayData[i*grayStep + j] = std::min( grayData[i*grayStep + j], newVal );
-		}
-	}
-}
-
 
 void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
 													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
@@ -414,10 +362,10 @@ void A4Matcher::applyA4SearchMask()
 
 CvPoint A4Matcher::findPreciseBorderAlignedLinesFindLineSubroutine(unsigned char *dataOrigin, int step, int xOffset, int yOffset)
 {
-	lhtHor.setPictureSpace(dataOrigin + yOffset*step + xOffset);
+	localHoughTransformer.setPictureSpace(dataOrigin + yOffset*step + xOffset);
 	CvPoint line;
 	try {
-		line = lhtHor.analyze();
+		line = localHoughTransformer.analyze();
 	} catch(...) { throw; }
 	line.y += -xOffset*sin(line.x*M_PI/180.0) + yOffset*cos(line.x*M_PI/180.0);
 	return line;
@@ -443,395 +391,72 @@ void A4Matcher::findPreciseBorderAlignedLines()
 		
 		CvPoint lineHorUL, lineHorUR, lineHorDL, lineHorDR;
 		CvPoint lineVerUL, lineVerUR, lineVerDL, lineVerDR;
-		lhtHor.fullReset(-20, 20, 2*widthBorderBlock, 2*safetyHeightMargin, step, NULL);
+		localHoughTransformer.fullReset(-20, 20, 2*widthBorderBlock, 2*safetyHeightMargin, step, NULL);
 		
 		try {
 			lineHorUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x, y);
 		} catch(...) {
 			lineHorUL = cvPoint(0, -a4pd.ulpt.y);
 		}
-		testLines.push_back( lineHorUL );
-		
+
 		try {
 			lineHorUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x + 2*widthBorderBlock, y);
 		} catch(...) { 
 			lineHorUR = cvPoint(0, -a4pd.ulpt.y); 
 		}
-		testLines.push_back( lineHorUR );
-		
+
 		try {
 			lineHorDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x, y + 4*heightBorderBlock - 2*safetyHeightMargin);
 		} catch(...) {
 			lineHorDL = cvPoint(0, -y - 4*heightBorderBlock + safetyHeightMargin); 
 		}
-		testLines.push_back( lineHorDL );
-		
+
 		try {
 			lineHorDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x + 2*widthBorderBlock, y + 4*heightBorderBlock - 2*safetyHeightMargin);
 		} catch(...) {
 			lineHorDR = cvPoint(0, -y - 4*heightBorderBlock + safetyHeightMargin); 
 		}
-		testLines.push_back( lineHorDR );
-		
-		lhtHor.fullReset(70, 110, 2*safetyWidthMargin, 2*heightBorderBlock, step, NULL);
+
+		localHoughTransformer.fullReset(70, 110, 2*safetyWidthMargin, 2*heightBorderBlock, step, NULL);
 		
 		try {
 			lineVerUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y);
 		} catch(...) {
 			lineVerUL = cvPoint(90, -a4pd.ulpt.x);
 		}
-		testLines.push_back( lineVerUL );
-		
 		try {
 			lineVerDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y + 2*heightBorderBlock);
 		} catch(...) {
-			lineVerUL = cvPoint(90, -a4pd.ulpt.x);
+			lineVerDL = cvPoint(90, -a4pd.ulpt.x);
 		}
-		testLines.push_back( lineVerDL );
-		
 		try {
 			lineVerUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y);
 		} catch(...) {
-			lineVerUL = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
+			lineVerUR = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
 		}
-		testLines.push_back( lineVerUR );
-		
 		try {
 			lineVerDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y + 2*heightBorderBlock);
 		} catch(...) {
-			lineVerUL = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
+			lineVerDR = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
 		}
-		testLines.push_back( lineVerDR );
 		
 		CvPoint cornerUL = lineIntersection(lineHorUL.x*M_PI/180, -lineHorUL.y, lineVerUL.x*M_PI/180, -lineVerUL.y);
 		CvPoint cornerUR = lineIntersection(lineHorUR.x*M_PI/180, -lineHorUR.y, lineVerUR.x*M_PI/180, -lineVerUR.y);
 		CvPoint cornerDL = lineIntersection(lineHorDL.x*M_PI/180, -lineHorDL.y, lineVerDL.x*M_PI/180, -lineVerDL.y);
 		CvPoint cornerDR = lineIntersection(lineHorDR.x*M_PI/180, -lineHorDR.y, lineVerDR.x*M_PI/180, -lineVerDR.y);
-		testCorners.push_back( cornerUL );
-		testCorners.push_back( cornerUR );
-		testCorners.push_back( cornerDL );
-		testCorners.push_back( cornerDR );
 
-		foundA4.push_back( A4Record(cornerUL, cornerUR, cornerDL, cornerDR) )
+		A4PreciseDetected.push_back( A4PreciseDetectedRecord(cornerUL, cornerUR, cornerDL, cornerDR
+			#ifdef DEBUG_LINES_INFORMATION 
+			,
+									lineHorUL, lineHorUR, lineHorDL, lineHorDR, 
+									lineVerUL, lineVerDL, lineVerUR, lineVerDR
+			#endif DEBUG_LINES_INFORMATION 
+									) );
 	}
-}
-
-/*
-bool A4Matcher::applyWhiteBodyDetector(int directionX, int directionY, int x0, int y0)
-{
-	int failsLeft = kernelSize;
-	
-    uchar *dataUBorder = (uchar *)uBordersFactored->imageData;
-    uchar *dataDBorder = (uchar *)dBordersFactored->imageData;
-    uchar *dataRBorder = (uchar *)rBordersFactored->imageData;
-    uchar *dataLBorder = (uchar *)lBordersFactored->imageData;
-	
-    uchar *dataimageResized = (uchar *)imageResized->imageData;
-    int stepimageResized = imageResized->widthStep;
-	
-	double ForegroundDispersion = 0;
-	double meanForeground = 0;
-	double likelihood = 0;
-	int idx; 
-
-	printf(">>> enter: %d %d\n", x0, y0);
-	int test = 0;
-
-	//Gathering stats
-	for(unsigned int k = 0; k < kernelSize; ++k) 
-	{
-		for(unsigned int l = 0; l < kernelSize; ++l) 
-		{
-			//The further we come from corner the bigger safe margin we should leave
-			if((k >= l/skewFactor)&&(l >= k/skewFactor))
-			{
-				++test;
-				idx = (y0+directionY*k)*stepimageResized+(x0+directionX*l);
-				int val = dataimageResized[idx];
-				meanForeground += val;
-				ForegroundDispersion += val*val;
-				if(dataUBorder[idx] || dataDBorder[idx] || dataLBorder[idx] || dataRBorder[idx])
-					--failsLeft;
-			}
-		}
-		if(!failsLeft)
-			return false;
-	}
-			
-	meanForeground /= whiteBodySize;
-
-	//What is supposed to be a Foreground is too dim
-	if(meanForeground < 90) 
-		return false;
-
-	printf(">>> meanForeground passed: %d %d\n", x0-1, y0+1);
-
-	ForegroundDispersion = (ForegroundDispersion - meanForeground*meanForeground*whiteBodySize)/(whiteBodySize - 1); 
-
-	//debug
-	assert(meanForeground >= 0 && ForegroundDispersion >= 0 && "Something deeply horrible happened: theese numbers should be positive");
-
-	if(ForegroundDispersion > thresholdCornerForegroundDispersion)
-		return false;
-	
-	printf(">>> ForegroundDispersion passed: %d %d\n", x0-1, y0+1);
-			
-	
-	unsigned char ucMeanForeground = static_cast<unsigned char>(meanForeground);
-	//Now applying more accurate pixel-by-pixel matcher
-	for(unsigned int k = 0; k < kernelSize; ++k) {
-		for(unsigned int l = 0; l < kernelSize; ++l) {
-			//The further we come from corner the bigger safe margin we should leave
-			if((k >= l/skewFactor)&&(l >= k/skewFactor))
-			{
-				uchar val = dataimageResized[(y0+directionY*k)*stepimageResized+(x0+directionX*l)];
-				likelihood += matchForegroundTrimBlack(val, ucMeanForeground, sqrt(ForegroundDispersion));
-			}
-		}
-	}
-	
-
-	if (likelihood > thresholdCornerLikelihood*whiteBodySize) 
-	{ 
-		printf(">>> likelihood passed: %d %d\n", x0-1, y0+1);
-		return true;
-	}
-	return false;
-}
-*/
-
-bool A4Matcher::applyBorderDetector(uchar *dataBorder, int step, int orthogonalStep, int borderLookupSize, int maxFails) 
-{
-	const int skewFactor = 4;
-	const int initialRangeRadius = 2; // initialRange = 2*initialRangeRadius + 1
-	int failsLeft = maxFails;
-	int stepsLeft = borderLookupSize;
-	int i;
-
-	while(stepsLeft && failsLeft) 
-	{
-		bool borderFound = false;
-		int range = ( (borderLookupSize - stepsLeft)/skewFactor + initialRangeRadius)*orthogonalStep;
-		for(i = -range; i <= range && !borderFound; i += orthogonalStep)
-			borderFound = borderFound || dataBorder[i];
-		if(!borderFound)
-			--failsLeft;
-		dataBorder += step;
-		--stepsLeft;
-	}
-	if(failsLeft > 0)
-		return true;
-	return false;
-}
-
-
-void A4Matcher::applyBaseCornerSearch(std::list<CvPoint>& cornersList, uchar *dataHorBorder, uchar *dataVerBorder, int horStep, int verStep)
-{
-    int step = imageResized->widthStep;
-	
-	const int kernelSize = 12;
-	const int xyBorderLookupSize = 11;
-	const int xyMaxFails = 2;
-	const int xySafeShift = 2;
-	int horOrthogonalStep = step;
-	int verOrthogonalStep = 1;
-	int whiteBodyDirectionX = horStep > 0 ? 1 : -1;
-	int whiteBodyDirectionY = verStep > 0 ? 1 : -1;
-	//const int diagonalProofLookupSize = 5;
-	//const int diagonalMaxFails = 2;
-	//const int diagonalSafeShift = 3; //Somehow several (not one as predicted) pixels are black on the corner
-
-    uchar *data = (uchar *)imageResized->imageData;
-
-    //uchar *dataUBorder = (uchar *)uBordersFactored->imageData;
-    //uchar *dataRBorder = (uchar *)rBordersFactored->imageData;
-    //uchar *dataCornerDetectorURSecond = (uchar *)cornerDetector2DerivativeUR->imageData;
-    //uchar *dataCornerDetectorDRSecond = (uchar *)cornerDetector2DerivativeDR->imageData;
-    //uchar *dataCornerDetectorURFirst = (uchar *)cornerDetector1DerivativeUR->imageData;
-    //uchar *dataCornerDetectorDRFirst = (uchar *)cornerDetector1DerivativeDR->imageData;
-
-	//printf("Begun analyzing w %d h %d \n", imageResized->width, imageResized->height);
-	//FIXME kernelSize -> something more bugproof
-    for (int i = kernelSize+1+xySafeShift; i < imageResized->height-kernelSize-1-xySafeShift; i++) 
-	{
-        for (int j = kernelSize+1+xySafeShift; j < imageResized->width-kernelSize-1-xySafeShift; j++) 
-		{
-			bool upperBorderDetected = applyBorderDetector(dataHorBorder + step*i + j + whiteBodyDirectionX*xySafeShift, horStep, horOrthogonalStep, xyBorderLookupSize, xyMaxFails);
-			if(upperBorderDetected)
-			{
-				//printf("upperBorderDetected: %d %d\n", j-1, i+1);
-				bool rightBorderDetected = applyBorderDetector(dataVerBorder + step*(i+whiteBodyDirectionY*xySafeShift) + j, verStep, verOrthogonalStep, xyBorderLookupSize, xyMaxFails);
-				if(rightBorderDetected)
-				{
-					//printf("rightBorderDetected: %d %d\n", j-1, i+1);
-					//int test = dataCornerDetectorDRFirst[step*(i-1) + j-1] + dataCornerDetectorDRFirst[step*(i-1) + j-2] + dataCornerDetectorDRFirst[step*(i+1) + j+1] + dataCornerDetectorDRFirst[step*(i+2) + j+1]
-					//			+ dataCornerDetectorDRFirst[step*i + j-1] + dataCornerDetectorDRFirst[step*i + j-2] + dataCornerDetectorDRFirst[step*(i+1) + j] + dataCornerDetectorDRFirst[step*(i+2) + j];
-					//bool diagonalUpperDerivativeDetected = applyBorderDetector(dataCornerDetectorDRFirst + step*i + j - diagonalSafeShift, -1, step, diagonalProofLookupSize, diagonalMaxFails);
-					//bool diagonalRightDerivativeDetected = applyBorderDetector(dataCornerDetectorDRFirst + step*(i+diagonalSafeShift) + j, step,  1, diagonalProofLookupSize, diagonalMaxFails);
-						//test >= 4*255; //true;
-					//if(diagonalUpperDerivativeDetected && diagonalRightDerivativeDetected)
-					//{
-						printf("\n===\ndiagonalDerivativeDetected: %d %d\n", j + whiteBodyDirectionX, i + whiteBodyDirectionY);
-						bool whiteBodyDetected = 1; //applyWhiteBodyDetector(whiteBodyDirectionX, whiteBodyDirectionY, j + whiteBodyDirectionX, i + whiteBodyDirectionY);
-						if(whiteBodyDetected) 
-						{
-							printf("Corner found: %d %d\n", j + whiteBodyDirectionX, i + whiteBodyDirectionY);
-							cornersList.push_back(cvPoint(j + whiteBodyDirectionX, i + whiteBodyDirectionY));
-						}
-					//}
-				}
-			}
-		}
-	}
-}
-
-void A4Matcher::applyURCornerSearch()
-{
-    int step = imageResized->widthStep;
-	applyBaseCornerSearch(URCorners, (uchar *)uBordersFactored->imageData, (uchar *)rBordersFactored->imageData, -1, step);
-}
-
-void A4Matcher::applyULCornerSearch()
-{
-    int step = imageResized->widthStep;
-	applyBaseCornerSearch(ULCorners, (uchar *)uBordersFactored->imageData, (uchar *)lBordersFactored->imageData, 1, step);
-}
-
-void A4Matcher::applyDRCornerSearch()
-{
-    int step = imageResized->widthStep;
-	applyBaseCornerSearch(DRCorners, (uchar *)dBordersFactored->imageData, (uchar *)rBordersFactored->imageData, -1, -step);
-}
-
-void A4Matcher::applyDLCornerSearch()
-{
-    int step = imageResized->widthStep;
-	applyBaseCornerSearch(DLCorners, (uchar *)dBordersFactored->imageData, (uchar *)lBordersFactored->imageData, 1, -step);
-}
-
-void A4Matcher::findCorners() 
-{
-	/*
-	applyURCornerSearch();
-	applyULCornerSearch();
-	applyDRCornerSearch();
-	applyDLCornerSearch();
-	*/
-}
-
-bool A4Matcher::findA4() 
-{
-	bool foundFlag = false;
-	const float angleTreshold = static_cast<float>(M_PI/24); //7.5 degrees
-	const float a4sidesRatio = 99.0f/70.0f; //1.414, rational approximation of sqrt(2)
-	const float a4sidesRatioDelta = 0.2f;
-
-	for(std::list<CvPoint>::iterator itDL = DLCorners.begin(); itDL != DLCorners.end(); ++itDL)
-	{
-		CvPoint& ptDL = *itDL;
-		for(std::list<CvPoint>::iterator itDR = DRCorners.begin(); itDR != DRCorners.end(); ++itDR)
-		{
-			CvPoint& ptDR = *itDR;
-			float DLDRangle = atanf( abs(ptDR.y - ptDL.y)/static_cast<float>(abs(ptDR.x - ptDL.x)) );
-			if( (ptDL.x < ptDR.x)&&(DLDRangle < angleTreshold) )
-			{
-				//printf("2 pt matched\n");
-				for(std::list<CvPoint>::iterator itUL = ULCorners.begin(); itUL != ULCorners.end(); ++itUL)
-				{
-					CvPoint& ptUL = *itUL;
-					float DLULangle = atanf( abs(ptDL.y - ptUL.y)/static_cast<float>(abs(ptUL.x - ptDL.x)) );
-					if( (ptDL.y > ptUL.y)&&(DLULangle > M_PI/2 - angleTreshold) )
-					{
-						for(std::list<CvPoint>::iterator itUR = URCorners.begin(); itUR != URCorners.end(); ++itUR)
-						{ 
-							CvPoint& ptUR = *itUR;
-							float DRURangle = atanf( abs(ptUR.y - ptDR.y)/static_cast<float>(abs(ptUR.x - ptDR.x)) );
-							float ULURangle = atanf( abs(ptUR.y - ptUL.y)/static_cast<float>(abs(ptUR.x - ptUL.x)) );
-							if( (ptDL.y > ptUR.y)&&(DRURangle > M_PI/2 - angleTreshold)&&(ULURangle < angleTreshold) )
-							{
-								float hor1 = std::hypotf( static_cast<float>(ptDL.x - ptDR.x), static_cast<float>(ptDL.y - ptDR.y) );
-								float hor2 = std::hypotf( static_cast<float>(ptUL.x - ptUR.x), static_cast<float>(ptUL.y - ptUR.y) );
-								float vert1 = std::hypotf( static_cast<float>(ptUL.x - ptDL.x), static_cast<float>(ptUL.y - ptDL.y) );
-								float vert2 = std::hypotf( static_cast<float>(ptUR.x - ptDR.x), static_cast<float>(ptUR.y - ptDR.y) );
-								if( (a4sidesRatio - a4sidesRatioDelta < hor1/vert1) && (hor1/vert1 < a4sidesRatio + a4sidesRatioDelta) &&
-									(a4sidesRatio - a4sidesRatioDelta < hor2/vert2) && (hor2/vert2 < a4sidesRatio + a4sidesRatioDelta) )
-								{
-									foundA4.push_back(A4Record(ptUL, ptUR, ptDL, ptDR));
-									foundFlag = true;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return foundFlag;
-}
-
-
-void A4Matcher::dump()
-{
-    //namedWindow( "src", CV_WINDOW_AUTOSIZE );
-    //namedWindow( "imageResized", CV_WINDOW_AUTOSIZE );
-    //cv::namedWindow( "imageResized", CV_WINDOW_AUTOSIZE );
-	//printf("#\n");
-	/*
-	for(std::list<CvPoint>::iterator it = ULCorners.begin(); it != ULCorners.end(); ++it) {
-		cvDrawCircle(image, *it, debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
-	}
-	for(std::list<CvPoint>::iterator it = URCorners.begin(); it != URCorners.end(); ++it) {
-		cvDrawCircle(image, *it, debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
-	}
-	for(std::list<CvPoint>::iterator it = DLCorners.begin(); it != DLCorners.end(); ++it) {
-		cvDrawCircle(image, *it, 3*debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
-	}
-	for(std::list<CvPoint>::iterator it = DRCorners.begin(); it != DRCorners.end(); ++it) {
-		cvDrawCircle(image, *it, 3*debugShowSize, CV_RGB(255, 255, 255), 1, 8, 0);
-	}
-	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
-		cvDrawRect(image, (*it).ulpt, (*it).drpt, CV_RGB(255, 255, 255), 1, 8, 0);
-	}
-	*/
-	/*
-	for(std::list<CvRect>::iterator it = foundA4.begin(); it != foundA4.end(); ++it) {
-		cvDrawRect(imageResized, cvPoint((*it).x, (*it).y), cvPoint((*it).x - (*it).width, (*it).y - (*it).height), CV_RGB(255, 255, 255), 3, 8, 0);
-	}
-	for(std::list<CvRect>::iterator it = foundA4.begin(); it != foundA4.end(); ++it) {
-		cvDrawRect(image, cvPoint(2*(*it).x, 2*(*it).y), cvPoint(2*((*it).x - (*it).width), 2*((*it).y - (*it).height)), CV_RGB(255, 255, 255), 3, 8, 0);
-	}
-	*/
-	//cvDrawCircle(imageResized, cvPoint(imageResized->width/2, imageResized->height/2), 2, CV_RGB(255, 255, 255), 1, 8, 0);
-	//cvShowImage("image", image);
-	//cvShowImage("redChannelResized", redChannelResized);
-	//cvShowImage("greenChannelResized", greenChannelResized);
-	//cvShowImage("blueChannelResized", blueChannelResized);
-	//cvShowImage("imageCanny", imageCanny);
-	//cvShowImage("imageCannyResized", imageCannyResized);
-	//cvShowImage("imageResized", imageResized);
-	//cvShowImage("verticalBorders", verticalBorders);
-	//cvShowImage("horizontalBorders", horizontalBorders);
-	//cvShowImage("cornerDetector1DerivativeDR", cornerDetector1DerivativeDR);
 }
 
 void A4Matcher::normalizePoints()
 {
-	for(std::list<CvPoint>::iterator it = ULCorners.begin(); it != ULCorners.end(); ++it) {
-		(*it).x = (*it).x*resizeFactor + resizeFactor/2;
-		(*it).y = (*it).y*resizeFactor + resizeFactor/2;
-	}
-	for(std::list<CvPoint>::iterator it = URCorners.begin(); it != URCorners.end(); ++it) {
-		(*it).x = (*it).x*resizeFactor + resizeFactor/2;
-		(*it).y = (*it).y*resizeFactor + resizeFactor/2;
-	}
-	for(std::list<CvPoint>::iterator it = DLCorners.begin(); it != DLCorners.end(); ++it) {
-		(*it).x = (*it).x*resizeFactor + resizeFactor/2;
-		(*it).y = (*it).y*resizeFactor + resizeFactor/2;
-	}
-	for(std::list<CvPoint>::iterator it = DRCorners.begin(); it != DRCorners.end(); ++it) {
-		(*it).x = (*it).x*resizeFactor + resizeFactor/2;
-		(*it).y = (*it).y*resizeFactor + resizeFactor/2;
-	}
 	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
 		(*it).ulpt.x = (*it).ulpt.x*resizeFactor + resizeFactor/2;
 		(*it).ulpt.y = (*it).ulpt.y*resizeFactor + resizeFactor/2;
@@ -844,52 +469,10 @@ void A4Matcher::normalizePoints()
 	}
 }
 
-/*
-void A4Matcher::addIntersectionsToCornersList()
-{
-	//First removing points of intersections overlapping with already found corner points
-	bool foundFlag;
-	for(std::list<CvPoint>::iterator itIntersection = lineClusterifier.intersections.begin(); itIntersection != lineClusterifier.intersections.end(); ) {
-		foundFlag = false;
-		for(std::list<CvPoint>::iterator it = ULCorners.begin(); it != ULCorners.end() && !foundFlag; ++it) {
-			if( distanceManhattan(*itIntersection, *it) < cornerToIntersectionMaxDistance )
-				foundFlag = true;
-		}
-		for(std::list<CvPoint>::iterator it = URCorners.begin(); it != URCorners.end() && !foundFlag; ++it) {
-			if( distanceManhattan(*itIntersection, *it) < cornerToIntersectionMaxDistance )
-				foundFlag = true;
-		}
-		for(std::list<CvPoint>::iterator it = DLCorners.begin(); it != DLCorners.end() && !foundFlag; ++it) {
-			if( distanceManhattan(*itIntersection, *it) < cornerToIntersectionMaxDistance )
-				foundFlag = true;
-		}
-		for(std::list<CvPoint>::iterator it = DRCorners.begin(); it != DRCorners.end() && !foundFlag; ++it) {
-			if( distanceManhattan(*itIntersection, *it) < cornerToIntersectionMaxDistance )
-				foundFlag = true;
-		}
-		if(foundFlag) {
-			itIntersection = lineClusterifier.intersections.erase(itIntersection);
-		} else
-			++itIntersection;
-	}
-	//Then adding points of intersections to corners' lists of every type as we don't know which type are they exactly
-	for(std::list<CvPoint>::iterator itIntersection = lineClusterifier.intersections.begin(); itIntersection != lineClusterifier.intersections.end(); ++itIntersection) {
-		ULCorners.push_back(*itIntersection);
-		URCorners.push_back(*itIntersection);
-		DLCorners.push_back(*itIntersection);
-		DRCorners.push_back(*itIntersection);
-	}
-}
-*/
-
 void A4Matcher::clearResults()
 {
-	ULCorners.clear();
-	URCorners.clear();
-	DLCorners.clear();
-	DRCorners.clear();
 	A4PreDetected.clear();
-	foundA4.clear();
+	A4PreciseDetected.clear();
 }
 
 A4Matcher::~A4Matcher(void)

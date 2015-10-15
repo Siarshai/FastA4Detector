@@ -14,7 +14,7 @@
 #include "opencv2/contrib/contrib.hpp"
 
 #include <vector>
-
+#include <tuple>
 
 double darknessThresholdPenalty(unsigned char R, unsigned char G, unsigned char B);
 double darkness(unsigned char R, unsigned char G, unsigned char B);
@@ -25,6 +25,7 @@ CvPoint lineIntersection(double a1, double b1, double c1, double a2, double b2, 
 CvPoint lineIntersection(double alpha1, double rho1, double alpha2, double rho2);
 bool horizontalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step);
 bool verticalBlockPassII(int *dataII, int x, int y, int searchWidth, int searchHeight, int step);
+std::pair<CvPoint, CvPoint> fromLineToTwoPoints(CvPoint& line, int frameWidth, int frameHeight);
 
 template<typename T>
 T pieceOfII(T *data, int x, int y, int searchWidth, int searchHeight, int step)
