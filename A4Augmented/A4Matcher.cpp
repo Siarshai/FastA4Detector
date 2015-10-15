@@ -3,8 +3,7 @@
 #include "A4Matcher.h"
 
 
-
-A4Matcher::A4Matcher() : mainSize(cvSize(-1, -1)), resizeFactor(4) //TODO: replace with constants //lineClusterifier(0.3f, 20.0f), pointClusterifier(10.0f), 
+A4Matcher::A4Matcher() : mainSize(cvSize(-1, -1)), resizeFactor(4)
 {
 
 }
@@ -18,12 +17,10 @@ void A4Matcher::initMemory(CvSize size)
 	sizeII = cvSize(size.width + 1, size.height + 1);
 	sizeFactoredII = cvSize(sizeFactored.width + 1, sizeFactored.height + 1);
 
-	//Resetting memory banks
-	//Main image
     image = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
-    imageResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1); //make lesser?
+    imageResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1); 
 	
-    redChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1); //TODO: get rid of them
+    redChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1); 
     greenChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
     blueChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
 
@@ -154,9 +151,6 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 
 													  IplImage *buff, int numberOfAnalyzers)
 {
-	const int secondDerivativeThreshold = 180;
-	const int firstDerivativeDiagThreshold = 40;
-	const int firstDerivativeXYThreshold = 180;
 
     uchar *dataRed = (uchar *)rc->imageData;
     uchar *dataGreen = (uchar *)gc->imageData;
@@ -172,10 +166,6 @@ void A4Matcher::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc
 	int height = rc->height;
     int stepU8 = rc->widthStep;
 	int tmpU8;
-
-	//Calculating borders with state-keeptin border analyzer
-	//vector<BorderAnalyzer> ba(numberOfAnalyzers, BorderAnalyzer(numberOfAnalyzers/4));
-	//BorderAnalyzer ba[numberOfAnalyzers];
 
 	//Zerofying. May be optimized.
 	for(int j = 0; j < width; ++j) 
@@ -233,16 +223,6 @@ void A4Matcher::prepareDerivativesSearchTemplates()
 													  uBorders, dBorders, lBorders, rBorders, 
 													  uBordersII, dBordersII, lBordersII, rBordersII, 
 													  buffer, numberOfAnalyzers);
-	
-	cvShowImage("ubord", uBorders);
-	cvShowImage("dbord", dBorders);
-	cvShowImage("lbord", lBorders);
-	cvShowImage("rbord", rBorders);
-	cvShowImage("uBordersFactored", uBordersFactored);
-	cvShowImage("dBordersFactored", dBordersFactored);
-	cvShowImage("lBordersFactored", lBordersFactored);
-	cvShowImage("rBordersFactored", rBordersFactored);
-	//char c = cvWaitKey(100000);
 }
 
 void A4Matcher::setAndAnalyseImage(IplImage *aimage)
@@ -305,42 +285,34 @@ void A4Matcher::applyA4SearchMask()
 					whiteBodyBorders += pieceOfII(datadBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datarBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datalBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
-					if(whiteBodyBorders < 50*255) // <<<
-					{ 
-						if(horizontalBlockPassII(datauBordersIIFactored, j, i, widthBorderBlock, safetyHeightMargin, step))
+					if(    whiteBodyBorders < 50*255 
+						&& horizontalBlockPassII(datauBordersIIFactored, j, i, widthBorderBlock, safetyHeightMargin, step)
+						&& verticalBlockPassII(datalBordersIIFactored, j, i, safetyWidthMargin, heightBorderBlock, step) 
+						&& horizontalBlockPassII(datadBordersIIFactored, j, i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step) 
+						&& verticalBlockPassII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i, safetyWidthMargin, heightBorderBlock, step) )
+					{
+						int overlap = 0;
+						for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
 						{
-							if(verticalBlockPassII(datalBordersIIFactored, j, i, safetyWidthMargin, heightBorderBlock, step))
+							for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
 							{
-								if( horizontalBlockPassII(datadBordersIIFactored, j, i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step) )
+								overlap += databufferFactored[(i + k)*stepbufferFactored + j + l];
+							}
+						}
+						if(overlap < (searchWidth + 2*safetyWidthMargin)*(searchHeight + 2*safetyHeightMargin)*3/4) 
+						{
+							A4PreDetected.push_back(
+								A4PreDetectedRecord(cvPoint(j + safetyWidthMargin, i + safetyHeightMargin), 
+																		cvPoint(j + safetyWidthMargin + searchWidth, i + safetyHeightMargin + searchHeight),
+																		cvPoint(j, i),
+																		cvPoint(j + searchWidth + 2*safetyWidthMargin, i + searchHeight + 2*safetyHeightMargin),
+																		widthBorderBlock, heightBorderBlock, safetyWidthMargin, safetyHeightMargin)
+								);
+							for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
+							{
+								for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
 								{
-									if( verticalBlockPassII(datarBordersIIFactored, j + searchWidth + safetyWidthMargin, i, safetyWidthMargin, heightBorderBlock, step) )
-									{
-										int overlap = 0;
-										for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
-										{
-											for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
-											{
-												overlap += databufferFactored[(i + k)*stepbufferFactored + j + l];
-											}
-										}
-										if(overlap < (searchWidth + 2*safetyWidthMargin)*(searchHeight + 2*safetyHeightMargin)*3/4) 
-										{
-											A4PreDetected.push_back(
-												A4PreDetectedRecord(cvPoint(j + safetyWidthMargin, i + safetyHeightMargin), 
-																						cvPoint(j + safetyWidthMargin + searchWidth, i + safetyHeightMargin + searchHeight),
-																						cvPoint(j, i),
-																						cvPoint(j + searchWidth + 2*safetyWidthMargin, i + searchHeight + 2*safetyHeightMargin),
-																						widthBorderBlock, heightBorderBlock, safetyWidthMargin, safetyHeightMargin)
-												);
-											for(int k = 0; k < searchHeight + 2*safetyHeightMargin; ++k)
-											{
-												for(int l = 0; l < searchWidth + 2*safetyWidthMargin; ++l) 
-												{
-													databufferFactored[(i + k)*stepbufferFactored + j + l] = 1;
-												}
-											}
-										}
-									}
+									databufferFactored[(i + k)*stepbufferFactored + j + l] = 1;
 								}
 							}
 						}
