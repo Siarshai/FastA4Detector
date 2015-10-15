@@ -445,47 +445,62 @@ void A4Matcher::findPreciseBorderAlignedLines()
 		CvPoint lineVerUL, lineVerUR, lineVerDL, lineVerDR;
 		lhtHor.fullReset(-20, 20, 2*widthBorderBlock, 2*safetyHeightMargin, step, NULL);
 		
-		//TODO: correct handling
 		try {
 			lineHorUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x, y);
-		} catch(...) {  }
+		} catch(...) {
+			lineHorUL = cvPoint(0, -a4pd.ulpt.y);
+		}
 		testLines.push_back( lineHorUL );
 		
 		try {
 			lineHorUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataUBorders, step, x + 2*widthBorderBlock, y);
-		} catch(...) {  }
+		} catch(...) { 
+			lineHorUR = cvPoint(0, -a4pd.ulpt.y); 
+		}
 		testLines.push_back( lineHorUR );
 		
 		try {
 			lineHorDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x, y + 4*heightBorderBlock - 2*safetyHeightMargin);
-		} catch(...) {  }
+		} catch(...) {
+			lineHorDL = cvPoint(0, -y - 4*heightBorderBlock + safetyHeightMargin); 
+		}
 		testLines.push_back( lineHorDL );
 		
 		try {
 			lineHorDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataDBorders, step, x + 2*widthBorderBlock, y + 4*heightBorderBlock - 2*safetyHeightMargin);
-		} catch(...) {  }
+		} catch(...) {
+			lineHorDR = cvPoint(0, -y - 4*heightBorderBlock + safetyHeightMargin); 
+		}
 		testLines.push_back( lineHorDR );
 		
 		lhtHor.fullReset(70, 110, 2*safetyWidthMargin, 2*heightBorderBlock, step, NULL);
 		
 		try {
 			lineVerUL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y);
-		} catch(...) {  }
+		} catch(...) {
+			lineVerUL = cvPoint(90, -a4pd.ulpt.x);
+		}
 		testLines.push_back( lineVerUL );
 		
 		try {
 			lineVerDL = findPreciseBorderAlignedLinesFindLineSubroutine(dataLBorders, step, x, y + 2*heightBorderBlock);
-		} catch(...) {  }
+		} catch(...) {
+			lineVerUL = cvPoint(90, -a4pd.ulpt.x);
+		}
 		testLines.push_back( lineVerDL );
 		
 		try {
 			lineVerUR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y);
-		} catch(...) {  }
+		} catch(...) {
+			lineVerUL = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
+		}
 		testLines.push_back( lineVerUR );
 		
 		try {
 			lineVerDR = findPreciseBorderAlignedLinesFindLineSubroutine(dataRBorders, step, x + 4*widthBorderBlock - 2*safetyWidthMargin, y + 2*heightBorderBlock);
-		} catch(...) {  }
+		} catch(...) {
+			lineVerUL = cvPoint(90, -x - 4*widthBorderBlock + safetyWidthMargin);
+		}
 		testLines.push_back( lineVerDR );
 		
 		CvPoint cornerUL = lineIntersection(lineHorUL.x*M_PI/180, -lineHorUL.y, lineVerUL.x*M_PI/180, -lineVerUL.y);
@@ -497,13 +512,7 @@ void A4Matcher::findPreciseBorderAlignedLines()
 		testCorners.push_back( cornerDL );
 		testCorners.push_back( cornerDR );
 
-		foundA4.push_back( A4Record(cornerUL, cornerUR, cornerDL, cornerDR) );
-
-		/*
-		cvDrawRect(image,   cvPoint(x + 4*widthBorderBlock - 2*safetyWidthMargin, y), 
-							cvPoint(x + 4*widthBorderBlock, y + 2*heightBorderBlock), CV_RGB(255, 255, 255), 1, 8, 0);
-		cvShowImage("image", image);
-		*/
+		foundA4.push_back( A4Record(cornerUL, cornerUR, cornerDL, cornerDR) )
 	}
 }
 
