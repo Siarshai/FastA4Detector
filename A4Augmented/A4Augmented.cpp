@@ -6,6 +6,8 @@
 #include <set>
 #include "A4Matcher.h"
 #include "LocalHoughTransformer.h"
+#include "A4Projector.h"
+
 
 //Pass an arbitrary big number to set camera's best resolution
 #define MAXRESOLUTION 10000
@@ -14,6 +16,7 @@
 
 using namespace cv;
 using namespace std;
+
 
 int main(int argc, char** argv)
 {
