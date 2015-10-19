@@ -42,6 +42,12 @@ int main(int argc, char** argv)
 	#endif //FROM_PICTURES
 	
 	A4Matcher am;
+	//SimpleImageProjector a4p("images/projection.jpg");
+	std::list<pair<char*, int>> *text = new std::list<pair<char*, int>>();
+	text->push_back(pair<char*, int>("Test Test Test", 5));
+	text->push_back(pair<char*, int>("WorksWorksWorks", 10));
+	text->push_back(pair<char*, int>("y a a a a a a a a a a a y", 15));
+	TextAnimatedProjector a4p(text);
 
     IplImage* frame = 0;
 
@@ -97,31 +103,13 @@ int main(int argc, char** argv)
 			twoPoints = fromLineToTwoPoints(pdr.lineVerUR, frame->width, frame->height);
 			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
 			#endif DEBUG_LINES_INFORMATION
+			
+			a4p.findTransform(pdr);
+			a4p.project(frame);
 		}
 		am.clearResults();
 
         cvShowImage("frame", frame);
-
-		/*
-					int alpha = line.x;
-			int rho = -line.y;
-			printf("alpha %d, rho %d\n", alpha, rho);
-			CvPoint pt1;
-			CvPoint pt2;
-			if(alpha == 0) 
-			{
-				pt1 = cvPoint(0, -rho);
-				pt2 = cvPoint(frame->width, -rho); 
-			} else if(alpha == 90)
-			{
-				pt1 = cvPoint(rho, 0);
-				pt2 = cvPoint(rho, frame->height);
-			} else
-			{
-				pt1 = cvPoint( rho/sin(alpha*M_PI/180.0), 0);
-				pt2 = cvPoint( (rho + cos(alpha*M_PI/180.0)*frame->height)/sin(alpha*M_PI/180.0) , frame->height);
-			}
-			*/
 		
 		#ifdef FROM_PICTURES
 			char c = cvWaitKey(100000);

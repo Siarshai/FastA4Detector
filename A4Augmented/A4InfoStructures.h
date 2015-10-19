@@ -2,7 +2,7 @@
 #define A4INFOSTRUCTURES
 
 //For black debug majjicks
-#define DEBUG_LINES_INFORMATION 1
+//#define DEBUG_LINES_INFORMATION 1
 
 
 struct A4PreDetectedRecord {
