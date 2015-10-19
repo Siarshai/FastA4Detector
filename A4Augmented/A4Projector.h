@@ -7,8 +7,8 @@
 
 class IProjector
 {
-	virtual void findTransform(A4PreciseDetectedRecord dstRecord) = 0;
-	virtual void project(IplImage* dst) = 0;
+public:
+	virtual void project(IplImage* dst, A4PreciseDetectedRecord dstRecord) = 0;
 };
 
 
@@ -34,17 +34,13 @@ public:
 		delete transformMat;
 		cvReleaseImage(&projection);
 	}
-	void findTransform(A4PreciseDetectedRecord dstRecord)
+	void project(IplImage* dst, A4PreciseDetectedRecord dstRecord)
 	{
-		CvPoint2D32f dst[4];
-		dst[0] = cvPoint2D32f(dstRecord.UL.x, dstRecord.UL.y);
-		dst[1] = cvPoint2D32f(dstRecord.UR.x, dstRecord.UR.y);
-		dst[2] = cvPoint2D32f(dstRecord.DL.x, dstRecord.DL.y);
-		dst[3] = cvPoint2D32f(dstRecord.DR.x, dstRecord.DR.y);
-	    transformMat = cvGetPerspectiveTransform(corners, dst, transformMat);
-	}
-	void project(IplImage* dst)
-	{
+		CvPoint2D32f dstCorners[4];
+		dstCorners[0] = cvPoint2D32f(dstRecord.UL.x, dstRecord.UL.y);
+		dstCorners[1] = cvPoint2D32f(dstRecord.UR.x, dstRecord.UR.y);
+		dstCorners[2] = cvPoint2D32f(dstRecord.DL.x, dstRecord.DL.y);
+		dstCorners[3] = cvPoint2D32f(dstRecord.DR.x, dstRecord.DR.y);
 	    cvWarpPerspective(projection, dst, transformMat, CV_INTER_LINEAR);
 	}
 };
@@ -107,17 +103,14 @@ public:
 			cvPutText(projection, (*currentText).first, cvPoint( projection->width/2 - textSize.width/2, projection->height/2 ), &font, color);
 		}
 	}
-	void findTransform(A4PreciseDetectedRecord dstRecord)
+	void project(IplImage* dst, A4PreciseDetectedRecord dstRecord)
 	{
-		CvPoint2D32f dst[4];
-		dst[0] = cvPoint2D32f(dstRecord.UL.x, dstRecord.UL.y);
-		dst[1] = cvPoint2D32f(dstRecord.UR.x, dstRecord.UR.y);
-		dst[2] = cvPoint2D32f(dstRecord.DL.x, dstRecord.DL.y);
-		dst[3] = cvPoint2D32f(dstRecord.DR.x, dstRecord.DR.y);
-	    transformMat = cvGetPerspectiveTransform(corners, dst, transformMat);
-	}
-	void project(IplImage* dst)
-	{
+		CvPoint2D32f dstCorners[4];
+		dstCorners[0] = cvPoint2D32f(dstRecord.UL.x, dstRecord.UL.y);
+		dstCorners[1] = cvPoint2D32f(dstRecord.UR.x, dstRecord.UR.y);
+		dstCorners[2] = cvPoint2D32f(dstRecord.DL.x, dstRecord.DL.y);
+		dstCorners[3] = cvPoint2D32f(dstRecord.DR.x, dstRecord.DR.y);
+	    transformMat = cvGetPerspectiveTransform(corners, dstCorners, transformMat);
 	    cvWarpPerspective(projection, dst, transformMat, CV_INTER_LINEAR);
 		changeCaption();
 	}

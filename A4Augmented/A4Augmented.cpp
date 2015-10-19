@@ -7,6 +7,7 @@
 #include "A4Matcher.h"
 #include "LocalHoughTransformer.h"
 #include "A4Projector.h"
+#include "A4Grabber.h"
 
 
 //Pass an arbitrary big number to set camera's best resolution
@@ -43,11 +44,14 @@ int main(int argc, char** argv)
 	
 	A4Matcher am;
 	//SimpleImageProjector a4p("images/projection.jpg");
+	/*
 	std::list<pair<char*, int>> *text = new std::list<pair<char*, int>>();
 	text->push_back(pair<char*, int>("Test Test Test", 5));
 	text->push_back(pair<char*, int>("WorksWorksWorks", 10));
 	text->push_back(pair<char*, int>("y a a a a a a a a a a a y", 15));
 	TextAnimatedProjector a4p(text);
+	*/
+	A4TextGrabber a4g;
 
     IplImage* frame = 0;
 
@@ -104,8 +108,9 @@ int main(int argc, char** argv)
 			cvDrawLine(frame, twoPoints.first, twoPoints.second, CV_RGB(0, 200, 0), 1, 8, 0);
 			#endif DEBUG_LINES_INFORMATION
 			
-			a4p.findTransform(pdr);
-			a4p.project(frame);
+			//a4p.project(frame, pdr);
+			a4g.grab(frame, pdr);
+			a4g.dump();
 		}
 		am.clearResults();
 
