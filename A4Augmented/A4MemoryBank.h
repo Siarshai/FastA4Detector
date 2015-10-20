@@ -14,8 +14,6 @@ public:
 	CvSize sizeFactored;
 	CvSize sizeFactoredII;
 
-	IplImage *image, *imageResized;
-
     IplImage *redChannel, *greenChannel, *blueChannel; 
     IplImage *redChannelResized, *greenChannelResized, *blueChannelResized;
 

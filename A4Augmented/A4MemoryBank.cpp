@@ -17,9 +17,6 @@ void A4MemoryBank::initMemory(CvSize size, int aresizeFactor = 4)
 	sizeII = cvSize(size.width + 1, size.height + 1);
 	sizeFactoredII = cvSize(sizeFactored.width + 1, sizeFactored.height + 1);
 
-    image = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
-    imageResized = cvCreateImage(sizeFactored, IPL_DEPTH_8U, 1); 
-	
     redChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1); 
     greenChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
     blueChannel = cvCreateImage(mainSize, IPL_DEPTH_8U, 1);
@@ -118,26 +115,26 @@ void A4MemoryBank::consumeImage(IplImage *aimage, int resizeFactor)
 
 	if(currentSize.height != mainSize.height || currentSize.width != mainSize.width)
 		initMemory(currentSize, resizeFactor); 
-	//if( (currentSize.width != mainSize.width)||(currentSize.height != mainSize.height) )
-	//	initMemory(currentSize);
 
+	//TODO: make this part more efficient
 	if(aimage->width%resizeFactor != 0 || aimage->height%resizeFactor != 0) 
 	{
 		printf("DEBUG: Image formated to be divisable by %d\n", resizeFactor);
-		IplImage *tmp = cvCreateImage(cvSize(aimage->width, aimage->height), IPL_DEPTH_8U, 1);
-		cvCvtColor(aimage, tmp, CV_RGB2GRAY);
-		cvResize(tmp, image);
-		cvReleaseImage(&tmp);
+		IplImage *tmpRed = cvCreateImage(cvSize(aimage->width, aimage->height), IPL_DEPTH_8U, 1);
+		IplImage *tmpGreen = cvCreateImage(cvSize(aimage->width, aimage->height), IPL_DEPTH_8U, 1);
+		IplImage *tmpBlue = cvCreateImage(cvSize(aimage->width, aimage->height), IPL_DEPTH_8U, 1);
+		cvSplit(aimage, tmpRed, tmpGreen, tmpBlue, NULL);
+		cvResize(tmpRed, redChannel);
+		cvResize(tmpGreen, greenChannel);
+		cvResize(tmpBlue, blueChannel);
+		cvReleaseImage(&tmpRed);
+		cvReleaseImage(&tmpGreen);
+		cvReleaseImage(&tmpBlue);
 	} 
 	else
 	{
-		cvCvtColor(aimage, image, CV_RGB2GRAY);
+		cvSplit(aimage, redChannel, greenChannel, blueChannel, NULL); //FIXME: aimage -> image (rgb)
 	}
-
-	cvResize(image, imageResized);
-
-	cvSplit(aimage, redChannel, greenChannel, blueChannel, NULL); //FIXME: aimage -> image (rgb)
-	
 	cvResize(redChannel, redChannelResized);
 	cvResize(greenChannel, greenChannelResized);
 	cvResize(blueChannel, blueChannelResized);
