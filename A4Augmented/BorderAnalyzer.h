@@ -1,11 +1,12 @@
-#ifndef BORDERANALYZER_H
-#define BORDERANALYZER_H
+#ifndef LOCALBORDERANALYZER_H
+#define LOCALBORDERANALYZER_H
 
 #include "Utils.h"
+#include "A4MemoryBank.h"
 
 using std::vector;
 
-class BorderAnalyzer
+class LocalBorderAnalyzer
 {
 private:
 	uchar lastR;
@@ -27,7 +28,7 @@ private:
 	double gradientWeight;
 	double darknessWeight;
 public:
-	BorderAnalyzer(int amaxAftermath) : lastR(0), lastG(0), lastB(0), last2R(0), last2G(0), last2B(0), aftermath(0), maxAftermath(amaxAftermath),
+	LocalBorderAnalyzer(int amaxAftermath) : lastR(0), lastG(0), lastB(0), last2R(0), last2G(0), last2B(0), aftermath(0), maxAftermath(amaxAftermath),
 		gradientMidTreshold(10.0), gradientHighTreshold(12.0), 
 		darknessLowTreshold(90.0), darknessMidTreshold(110.0), darknessHighTreshold(130.0), 
 		colorfulnessLowTreshold(120.0*500.0), colorfulnessMidTreshold(120.0*1000.0), colorfulnessHighTreshold(120.0*1200.0), gradientWeight(0), darknessWeight(0) {} //darknessLowTreshold(240)
@@ -37,13 +38,13 @@ public:
 };
 
 
-class ChoirOfBorderAnalyzers 
+class ChoirOfLocalBorderAnalyzers 
 {
 private:
-	vector<BorderAnalyzer> ba;
+	vector<LocalBorderAnalyzer> ba;
 	int numberOfAnalyzers, agreementFactor;
 public:
-	ChoirOfBorderAnalyzers(int anumberOfAnalyzers, int aaftermathFactor, int aagreementFactor) : ba(anumberOfAnalyzers, BorderAnalyzer(aaftermathFactor)), 
+	ChoirOfLocalBorderAnalyzers(int anumberOfAnalyzers, int aaftermathFactor, int aagreementFactor) : ba(anumberOfAnalyzers, LocalBorderAnalyzer(aaftermathFactor)), 
 		numberOfAnalyzers(anumberOfAnalyzers), agreementFactor(aagreementFactor) {}
 	void response(int initialPoint, int shiftMultiplier, unsigned char *dataRed, unsigned char *dataGreen, unsigned char *dataBlue, unsigned char *dataBorders) 
 	{
@@ -61,6 +62,18 @@ public:
 		for(auto b = ba.begin(); b != ba.end(); ++b)
 			(*b).invalidate();
 	}
+};
+
+
+
+class BorderAnalyzer
+{
+public:
+	void prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
+													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
+													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 
+													  IplImage *buff, int numberOfAnalyzers);
+	void prepareDerivativesSearchTemplates(A4MemoryBank *memoryBank);
 };
 
 #endif

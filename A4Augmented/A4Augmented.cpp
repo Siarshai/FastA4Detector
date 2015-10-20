@@ -77,12 +77,12 @@ int main(int argc, char** argv)
 			
 		am.setAndAnalyseImage(frame);
 		
-		for(std::list<A4PreDetectedRecord>::iterator it = am.A4PreDetected.begin(); it != am.A4PreDetected.end(); ++it) {
+		for(std::list<A4PreDetectedRecord>::iterator it = am.getPreResults().begin(); it != am.getPreResults().end(); ++it) {
 			cvDrawRect(frame, (*it).ulpt, (*it).drpt, CV_RGB(0, 0, 255), 1, 8, 0);
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		for(A4PreciseDetectedRecord pdr : am.A4PreciseDetected)
+		for(A4PreciseDetectedRecord pdr : am.getPreciseResults())
 		{
 			cvDrawCircle(frame, pdr.UR, 1, CV_RGB(255, 0, 0), 2, 8, 0);
 			cvDrawCircle(frame, pdr.UL, 1, CV_RGB(255, 0, 0), 2, 8, 0);
