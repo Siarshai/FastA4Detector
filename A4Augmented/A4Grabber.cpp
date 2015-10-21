@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "A4Grabber.h"
+#include "A4BasicGrabber.h"
 
 
-A4TextGrabber::A4TextGrabber()
+A4BasicGrabber::A4BasicGrabber()
 {
 	dst = cvCreateImage(cvSize(1748/2, 1240/2), 8, 3);
 	transformMat = cvCreateMat(3, 3, CV_32FC1);
@@ -13,19 +13,13 @@ A4TextGrabber::A4TextGrabber()
 }
 
 
-A4TextGrabber::~A4TextGrabber()
+A4BasicGrabber::~A4BasicGrabber()
 {
 	delete transformMat;
 }
 
 
-void A4TextGrabber::addProcessor(IImageProcessor *iip)
-{
-	imageProcessors.push_back(std::unique_ptr<IImageProcessor>(iip));
-}
-
-
-void A4TextGrabber::grab(IplImage* src, A4PreciseDetectedRecord dstRecord) 
+void A4BasicGrabber::grab(IplImage* src, A4PreciseDetectedRecord dstRecord) 
 {
 	CvPoint2D32f srcCorners[4];
 	srcCorners[0] = cvPoint2D32f(dstRecord.UL.x, dstRecord.UL.y);
@@ -34,21 +28,13 @@ void A4TextGrabber::grab(IplImage* src, A4PreciseDetectedRecord dstRecord)
 	srcCorners[3] = cvPoint2D32f(dstRecord.DR.x, dstRecord.DR.y);
 	transformMat = cvGetPerspectiveTransform(srcCorners, corners, transformMat);
 	cvWarpPerspective(src, dst, transformMat, CV_INTER_LINEAR);
-	process();
 };
 
 
-void A4TextGrabber::dump()
+void A4BasicGrabber::dump()
 {
     cvShowImage("A4TextGrabber", dst);
 	//char c = cvWaitKey(100000);
-}
-
-
-void A4TextGrabber::process()
-{
-	for(auto it = imageProcessors.begin(); it != imageProcessors.end(); ++it)
-		(*it)->process(dst);
 }
 
 

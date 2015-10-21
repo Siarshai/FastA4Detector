@@ -27,6 +27,7 @@ public:
 	IplImage *bufferFactored;
 
 	A4MemoryBank();
+	~A4MemoryBank();
 	void initMemory(CvSize size, int resizeFactor);
 	void clearMemory();
 	void consumeImage(IplImage *aimage, int resizeFactor = 4);

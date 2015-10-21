@@ -11,13 +11,6 @@ A4Matcher::A4Matcher()
 	preciseDetectorPImpl = new A4PreciseDetector();
 }
 
-/*
-void A4Matcher::initMemory(CvSize size, int resizeFactor)
-{
-	memoryBankPImpl->clearMemory();
-	memoryBankPImpl->initMemory(size, resizeFactor);
-}
-*/
 
 void A4Matcher::clearMemory()
 {
@@ -30,14 +23,14 @@ void A4Matcher::setAndAnalyseImage(IplImage *aimage)
 	memoryBankPImpl->consumeImage(aimage);
 	borderAnalyzerPImpl->prepareDerivativesSearchTemplates(memoryBankPImpl);
 	preDetectorPImpl->detect(memoryBankPImpl);
-	preciseDetectorPImpl->detect(memoryBankPImpl, preDetectorPImpl->A4PreDetected);
+	preciseDetectorPImpl->detect(memoryBankPImpl, preDetectorPImpl->getResults());
 }
 
 
 void A4Matcher::clearResults()
 {
-	preDetectorPImpl->A4PreDetected.clear();
-	preciseDetectorPImpl->A4PreciseDetected.clear();
+	preDetectorPImpl->clear();
+	preciseDetectorPImpl->clear();
 }
 
 A4Matcher::~A4Matcher(void)
@@ -45,12 +38,12 @@ A4Matcher::~A4Matcher(void)
 	clearMemory();
 }
 
-std::list<A4PreDetectedRecord> & A4Matcher::getPreResults()
+const std::list<A4PreDetectedRecord> & A4Matcher::getPreResults()
 {
-	return preDetectorPImpl->A4PreDetected;
+	return preDetectorPImpl->getResults();
 }
 
-std::list<A4PreciseDetectedRecord> & A4Matcher::getPreciseResults()
+const std::list<A4PreciseDetectedRecord> & A4Matcher::getPreciseResults()
 {
-	return preciseDetectorPImpl->A4PreciseDetected;
+	return preciseDetectorPImpl->getResults();
 }

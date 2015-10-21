@@ -6,6 +6,11 @@ A4MemoryBank::A4MemoryBank()
 {
 }
 
+A4MemoryBank::~A4MemoryBank()
+{
+	clearMemory();
+}
+
 
 void A4MemoryBank::initMemory(CvSize size, int aresizeFactor = 4)
 {

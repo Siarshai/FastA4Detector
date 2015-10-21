@@ -14,7 +14,7 @@ CvPoint A4PreciseDetector::findPreciseBorderAlignedLinesFindLineSubroutine(unsig
 }
 
 
-void A4PreciseDetector::detect(A4MemoryBank *memoryBank, std::list<A4PreDetectedRecord> &A4PreDetected)
+void A4PreciseDetector::detect(A4MemoryBank *memoryBank, const std::list<A4PreDetectedRecord> &A4PreDetected)
 {
 	for(A4PreDetectedRecord a4pd : A4PreDetected)
 	{

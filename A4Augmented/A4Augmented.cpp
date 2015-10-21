@@ -6,9 +6,12 @@
 #include <set>
 #include "A4Matcher.h"
 #include "LocalHoughTransformer.h"
-#include "A4Projector.h"
-#include "A4Grabber.h"
+#include "A4BasicGrabber.h"
 
+#include "TextAnimatedProjector.h"
+#include "SimpleImageProjector.h"
+
+#include "TextImageProcessor.h"
 
 //Pass an arbitrary big number to set camera's best resolution
 #define MAXRESOLUTION 10000
@@ -28,13 +31,14 @@ int main(int argc, char** argv)
 			"images/hou7.jpg", "images/hou8.jpg", "images/hou9.jpg", "images/hou10.jpg"  */
 			//"images/easy/1.jpg", "images/easy/2.jpg",
 			/*"images/clean/hou1.jpg", "images/clean/hou4.jpg", "images/clean/hou2.jpg", "images/clean/hou3.jpg", 
-			"images/clean/hou5.jpg", "images/clean/hou6.jpg", "images/clean/hou7.jpg", "images/clean/hou8.jpg", */
+			"images/clean/hou5.jpg", "images/clean/hou6.jpg", "images/clean/hou7.jpg", "images/clean/hou8.jpg", */ 
 			"images/garageH/1.JPG", "images/garageH/2.jpg", 
+			"images/caption/1.jpg", "images/caption/2.jpg", "images/caption/3.jpg", "images/caption/4.jpg", "images/caption/5.jpg",
 			"images/garageH/3.jpg", "images/garageH/4.jpg", 
 			"images/garageH/5.jpg", "images/garageH/6.jpg",
 			"images/garageV/1.jpg", "images/garageV/2.jpg", "images/garageV/3.jpg", "images/garageV/4.jpg", "images/garageV/5.jpg",
 			"images/own/1.JPG", "images/own/2.JPG", "images/own/3.JPG", "images/own/4.JPG", "images/own/5.JPG", "images/own/6.JPG" };
-		const int size = 17;
+		const int size = 22;
 		int i = 0;
 	#else
 		CvCapture* capture = cvCreateCameraCapture(CV_CAP_ANY); 
@@ -51,7 +55,7 @@ int main(int argc, char** argv)
 	text->push_back(pair<char*, int>("y a a a a a a a a a a a y", 15));
 	TextAnimatedProjector a4p(text);
 	*/
-	A4TextGrabber a4g;
+	A4BasicGrabber a4g;
 
     IplImage* frame = 0;
 
@@ -77,12 +81,12 @@ int main(int argc, char** argv)
 			
 		am.setAndAnalyseImage(frame);
 		
-		for(std::list<A4PreDetectedRecord>::iterator it = am.getPreResults().begin(); it != am.getPreResults().end(); ++it) {
+		for(auto it = am.getPreResults().begin(); it != am.getPreResults().end(); ++it) {
 			cvDrawRect(frame, (*it).ulpt, (*it).drpt, CV_RGB(0, 0, 255), 1, 8, 0);
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		for(A4PreciseDetectedRecord pdr : am.getPreciseResults())
+		for(auto pdr : am.getPreciseResults())
 		{
 			cvDrawCircle(frame, pdr.UR, 1, CV_RGB(255, 0, 0), 2, 8, 0);
 			cvDrawCircle(frame, pdr.UL, 1, CV_RGB(255, 0, 0), 2, 8, 0);
@@ -110,7 +114,12 @@ int main(int argc, char** argv)
 			
 			//a4p.project(frame, pdr);
 			a4g.grab(frame, pdr);
-			a4g.dump();
+			A4MemoryBank* testa4process = new A4MemoryBank();
+			testa4process->consumeImage(a4g. dst);
+			TextImageProcessor tip;
+			tip.process(testa4process);
+			cvShowImage("testa4processRed", testa4process->redChannel);
+			char c = cvWaitKey(100000);
 		}
 		am.clearResults();
 

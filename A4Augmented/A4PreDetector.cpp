@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "A4PreDetector.h"
 
+using std::max;
+using std::min;
+
 
 void A4PreDetector::normalizePoints(A4MemoryBank *memoryBank)
 {
