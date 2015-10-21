@@ -16,7 +16,6 @@ private:
 		PointClusterRecord(int ax, int ay, int aweight): meanx(static_cast<float>(ax)), meany(static_cast<float>(ay)), actualx(static_cast<float>(ax)), actualy(static_cast<float>(ay)), actualkey(0), weight(aweight) {}
 	};
 
-
 	std::list<PointClusterRecord> tmpPoints;
 	float resolutionDistance;
 

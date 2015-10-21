@@ -79,6 +79,28 @@ void LocalBorderAnalyzer::discardAftermath()
 
 
 
+void ChoirOfLocalBorderAnalyzers::response(int initialPoint, int shiftMultiplier, unsigned char *dataRed, unsigned char *dataGreen, unsigned char *dataBlue, unsigned char *dataBorders) 
+{
+	int numberOfOk = 0; 
+	for(int k = 0; k < numberOfAnalyzers; ++k)
+		numberOfOk += ba[k].analyze(dataRed[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)], dataGreen[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)], dataBlue[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)]);
+	if(numberOfOk > agreementFactor) {
+		dataBorders[initialPoint] = 255;
+		invalidate();
+	} else
+		dataBorders[initialPoint] = 0;
+}
+
+
+void ChoirOfLocalBorderAnalyzers::invalidate()
+{	
+	for(auto b = ba.begin(); b != ba.end(); ++b)
+		(*b).invalidate();
+}
+
+
+
+
 void BorderAnalyzer::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
 													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
 													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 

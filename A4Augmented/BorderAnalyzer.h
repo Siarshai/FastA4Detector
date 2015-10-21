@@ -46,22 +46,8 @@ private:
 public:
 	ChoirOfLocalBorderAnalyzers(int anumberOfAnalyzers, int aaftermathFactor, int aagreementFactor) : ba(anumberOfAnalyzers, LocalBorderAnalyzer(aaftermathFactor)), 
 		numberOfAnalyzers(anumberOfAnalyzers), agreementFactor(aagreementFactor) {}
-	void response(int initialPoint, int shiftMultiplier, unsigned char *dataRed, unsigned char *dataGreen, unsigned char *dataBlue, unsigned char *dataBorders) 
-	{
-		int numberOfOk = 0; 
-		for(int k = 0; k < numberOfAnalyzers; ++k)
-			numberOfOk += ba[k].analyze(dataRed[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)], dataGreen[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)], dataBlue[initialPoint + shiftMultiplier*(k - numberOfAnalyzers/2)]);
-		if(numberOfOk > agreementFactor) {
-			dataBorders[initialPoint] = 255;
-			invalidate();
-		} else
-			dataBorders[initialPoint] = 0;
-	}
-	void invalidate()
-	{	
-		for(auto b = ba.begin(); b != ba.end(); ++b)
-			(*b).invalidate();
-	}
+	void response(int initialPoint, int shiftMultiplier, unsigned char *dataRed, unsigned char *dataGreen, unsigned char *dataBlue, unsigned char *dataBorders);
+	void invalidate();
 };
 
 
