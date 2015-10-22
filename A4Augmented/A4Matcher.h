@@ -10,6 +10,7 @@
 #include "BorderAnalyzer.h"
 #include "A4PreDetector.h"
 #include "A4PreciseDetector.h"
+#include "BorderAnalyzer.h"
 
 
 class A4Matcher
@@ -19,6 +20,7 @@ class A4Matcher
 	APreDetector *preDetectorPImpl;
 	APreciseDetector *preciseDetectorPImpl;
 
+	int resizeFactor;
 	void clearMemory();
 
 public:
@@ -30,8 +32,8 @@ public:
 	const std::list<A4PreDetectedRecord> &getPreResults();
 	const std::list<A4PreciseDetectedRecord> &getPreciseResults();
 	
-	A4Matcher();
-	~A4Matcher(void);
+	A4Matcher(BorderAnalyzer* aBorderDetector, APreDetector *aPreDetector, APreciseDetector *aPreciseDetector, int aresizeFactor);
+	~A4Matcher();
 };
 
 

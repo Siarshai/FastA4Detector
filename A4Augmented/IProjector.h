@@ -8,6 +8,7 @@
 class IProjector
 {
 public:
+	virtual ~IProjector() {}
 	virtual void project(IplImage* dst, A4PreciseDetectedRecord dstRecord) = 0;
 };
 	

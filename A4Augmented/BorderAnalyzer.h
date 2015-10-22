@@ -27,11 +27,17 @@ private:
 	double colorfulnessHighTreshold;
 	double gradientWeight;
 	double darknessWeight;
+	double darknessWeightMaxPenalty;
+	double darknessWeightMaxBoon;
+	double colorfulnessMaxPenalty;
+	double colorfulnessMaxBoon;
 public:
-	LocalBorderAnalyzer(int amaxAftermath) : lastR(0), lastG(0), lastB(0), last2R(0), last2G(0), last2B(0), aftermath(0), maxAftermath(amaxAftermath),
-		gradientMidTreshold(10.0), gradientHighTreshold(12.0), 
-		darknessLowTreshold(90.0), darknessMidTreshold(110.0), darknessHighTreshold(130.0), 
-		colorfulnessLowTreshold(120.0*500.0), colorfulnessMidTreshold(120.0*1000.0), colorfulnessHighTreshold(120.0*1200.0), gradientWeight(0), darknessWeight(0) {} //darknessLowTreshold(240)
+	LocalBorderAnalyzer(int amaxAftermath, 
+										 double agradientMidTreshold, double agradientHighTreshold, 
+										 double adarknessLowTreshold, double adarknessMidTreshold, double adarknessHighTreshold,
+										 double acolorfulnessLowTreshold, double acolorfulnessMidTreshold, double acolorfulnessHighTreshold,
+										 double adarknessWeightMaxPenalty, double adarknessWeightMaxBoon,
+										 double acolorfulnessMaxPenalty, double acolorfulnessMaxBoon );
 	bool analyze(int r, int g, int b);
 	void invalidate();
 	void discardAftermath();
@@ -44,7 +50,7 @@ private:
 	vector<LocalBorderAnalyzer> ba;
 	int numberOfAnalyzers, agreementFactor;
 public:
-	ChoirOfLocalBorderAnalyzers(int anumberOfAnalyzers, int aaftermathFactor, int aagreementFactor) : ba(anumberOfAnalyzers, LocalBorderAnalyzer(aaftermathFactor)), 
+	ChoirOfLocalBorderAnalyzers(int anumberOfAnalyzers, int aagreementFactor, LocalBorderAnalyzer& lba) : ba(anumberOfAnalyzers, lba), 
 		numberOfAnalyzers(anumberOfAnalyzers), agreementFactor(aagreementFactor) {}
 	void response(int initialPoint, int shiftMultiplier, unsigned char *dataRed, unsigned char *dataGreen, unsigned char *dataBlue, unsigned char *dataBorders);
 	void invalidate();
@@ -54,7 +60,9 @@ public:
 
 class BorderAnalyzer
 {
+	ChoirOfLocalBorderAnalyzers cba;
 public:
+	BorderAnalyzer(int numberOfAnalyzers, LocalBorderAnalyzer& lba);
 	void prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
 													  IplImage *ubord, IplImage *dbord, IplImage *lbord, IplImage *rbord, 
 													  IplImage *ubordII, IplImage *dbordII, IplImage *lbordII, IplImage *rbordII, 

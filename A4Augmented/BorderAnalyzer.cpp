@@ -3,9 +3,28 @@
 #include "BorderAnalyzer.h"
 
 
+
+LocalBorderAnalyzer::LocalBorderAnalyzer(int amaxAftermath, 
+										 double agradientMidTreshold, double agradientHighTreshold, 
+										 double adarknessLowTreshold, double adarknessMidTreshold, double adarknessHighTreshold,
+										 double acolorfulnessLowTreshold, double acolorfulnessMidTreshold, double acolorfulnessHighTreshold,
+										 double adarknessWeightMaxPenalty, double adarknessWeightMaxBoon,
+										 double acolorfulnessMaxPenalty, double acolorfulnessMaxBoon) :
+	lastR(0), lastG(0), lastB(0), 
+	last2R(0), last2G(0), last2B(0), 
+	aftermath(0), maxAftermath(amaxAftermath),
+	gradientMidTreshold(agradientMidTreshold), gradientHighTreshold(agradientHighTreshold),  //gradientMidTreshold(10.0), gradientHighTreshold(12.0), 
+	darknessLowTreshold(adarknessLowTreshold), darknessMidTreshold(adarknessMidTreshold), darknessHighTreshold(adarknessHighTreshold),  //darknessLowTreshold(90.0), darknessMidTreshold(110.0), darknessHighTreshold(130.0), 
+	colorfulnessLowTreshold(acolorfulnessLowTreshold), colorfulnessMidTreshold(acolorfulnessMidTreshold), colorfulnessHighTreshold(acolorfulnessHighTreshold), //colorfulnessLowTreshold(120.0*500.0), colorfulnessMidTreshold(120.0*1000.0), colorfulnessHighTreshold(120.0*1200.0), 
+	gradientWeight(0), darknessWeight(0), //darknessLowTreshold(240)
+	darknessWeightMaxPenalty(adarknessWeightMaxPenalty), darknessWeightMaxBoon(adarknessWeightMaxBoon), // -0.2  0.05
+	colorfulnessMaxPenalty(acolorfulnessMaxPenalty), colorfulnessMaxBoon(acolorfulnessMaxBoon) // -0.2 0.06
+	{} 
+
 bool LocalBorderAnalyzer::analyze(int r, int g, int b)
 {
-	double cleanGradient = abs((r - last2R)/2) + abs((g - last2G)/2) + abs((b - last2B)/2); // sumOfAbsoluteValues(firstDerivative(r, last2R), firstDerivative(g, last2G), firstDerivative(b, last2B));
+	//double cleanGradient = abs((r - last2R)/2) + abs((g - last2G)/2) + abs((b - last2B)/2); // sumOfAbsoluteValues(firstDerivative(r, last2R), firstDerivative(g, last2G), firstDerivative(b, last2B));
+	double cleanGradient = (last2R - r)/2 + (last2G - g)/2 + (last2B - b)/2;
 	if(cleanGradient > 3*gradientHighTreshold)
 		cleanGradient = 3*gradientHighTreshold;
 	double weightedGradient = gradientWeight*cleanGradient;
@@ -35,10 +54,10 @@ bool LocalBorderAnalyzer::analyze(int r, int g, int b)
 		gradientWeight = 0;
 		return false;
 	}
-	darknessWeight = generalSlopeFunction(darkness, -0.2, darknessLowTreshold, 0.05, darknessHighTreshold); 
+	darknessWeight = generalSlopeFunction(darkness, darknessWeightMaxPenalty, darknessLowTreshold, darknessWeightMaxBoon, darknessHighTreshold); 
 	gradientWeight += darknessWeight;
 			
-	double colors = colorfulness(r, g, b)*(0.6 - darknessWeight);
+	double colors = colorfulness(r, g, b)*(0.6 - darknessWeight); // <<
 	if(colors > colorfulnessHighTreshold)
 	{
 		gradientWeight = 0;
@@ -48,7 +67,7 @@ bool LocalBorderAnalyzer::analyze(int r, int g, int b)
 	if(darkness < darknessHighTreshold) 
 	{
 		double penalty = (darknessHighTreshold - darkness)*2/1000.0;
-		gradientWeight += generalSlopeFunction(colors, 0.06 - penalty, colorfulnessLowTreshold, -0.2 - penalty, colorfulnessHighTreshold); 
+		gradientWeight += generalSlopeFunction(colors, colorfulnessMaxBoon - penalty, colorfulnessLowTreshold, colorfulnessMaxPenalty - penalty, colorfulnessHighTreshold); 
 	}
 
 	if(gradientWeight < 0.0)
@@ -99,6 +118,10 @@ void ChoirOfLocalBorderAnalyzers::invalidate()
 }
 
 
+BorderAnalyzer::BorderAnalyzer(int numberOfAnalyzers, LocalBorderAnalyzer& lba) : 
+	cba(numberOfAnalyzers, numberOfAnalyzers*3/4, lba)
+{
+} 
 
 
 void BorderAnalyzer::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImage *gc, IplImage *bc, 
@@ -135,8 +158,6 @@ void BorderAnalyzer::prepareDerivativesSearchTemplatesBase(IplImage *rc, IplImag
 			databufferFactored[tmpU8] = 0;
 		}
 	}
-
-	ChoirOfLocalBorderAnalyzers cba(numberOfAnalyzers, numberOfAnalyzers/4, numberOfAnalyzers*3/4);
 	
     for (int j = numberOfAnalyzers/2; j < width-numberOfAnalyzers/2; ++j) {
 		for (int i = height - 1 - numberOfAnalyzers/2; i >= numberOfAnalyzers/2; --i) 

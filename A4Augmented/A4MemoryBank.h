@@ -30,7 +30,11 @@ public:
 	~A4MemoryBank();
 	void initMemory(CvSize size, int resizeFactor);
 	void clearMemory();
-	void consumeImage(IplImage *aimage, int resizeFactor = 4);
+	void consumeImage(IplImage *aimage, int resizeFactor);
+	void dumpBordersFactored();
+	void dumpBorders();
+	void dumpFactored();
+	void dumpOrigin();
 };
 
 #endif //A4MEMORYBANK

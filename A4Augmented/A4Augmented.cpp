@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <set>
+#include "A4InHandMatcher.h"
 #include "A4Matcher.h"
 #include "LocalHoughTransformer.h"
 #include "A4BasicGrabber.h"
@@ -26,19 +27,15 @@ int main(int argc, char** argv)
 {
 	#ifdef FROM_PICTURES
 		char* imageNames[] = { 
-			/*
-			"images/hou1.jpg", "images/hou2.jpg", "images/hou3.jpg", "images/hou4.jpg", "images/hou5.jpg", "images/hou6.jpg",
-			"images/hou7.jpg", "images/hou8.jpg", "images/hou9.jpg", "images/hou10.jpg"  */
 			//"images/easy/1.jpg", "images/easy/2.jpg",
 			/*"images/clean/hou1.jpg", "images/clean/hou4.jpg", "images/clean/hou2.jpg", "images/clean/hou3.jpg", 
 			"images/clean/hou5.jpg", "images/clean/hou6.jpg", "images/clean/hou7.jpg", "images/clean/hou8.jpg", */ 
 			"images/garageH/1.JPG", "images/garageH/2.jpg", 
-			"images/caption/1.jpg", "images/caption/2.jpg", "images/caption/3.jpg", "images/caption/4.jpg", "images/caption/5.jpg",
 			"images/garageH/3.jpg", "images/garageH/4.jpg", 
 			"images/garageH/5.jpg", "images/garageH/6.jpg",
 			"images/garageV/1.jpg", "images/garageV/2.jpg", "images/garageV/3.jpg", "images/garageV/4.jpg", "images/garageV/5.jpg",
 			"images/own/1.JPG", "images/own/2.JPG", "images/own/3.JPG", "images/own/4.JPG", "images/own/5.JPG", "images/own/6.JPG" };
-		const int size = 22;
+		const int size = 17;
 		int i = 0;
 	#else
 		CvCapture* capture = cvCreateCameraCapture(CV_CAP_ANY); 
@@ -46,7 +43,6 @@ int main(int argc, char** argv)
 		cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, MAXRESOLUTION);
 	#endif //FROM_PICTURES
 	
-	A4Matcher am;
 	//SimpleImageProjector a4p("images/projection.jpg");
 	/*
 	std::list<pair<char*, int>> *text = new std::list<pair<char*, int>>();
@@ -55,6 +51,10 @@ int main(int argc, char** argv)
 	text->push_back(pair<char*, int>("y a a a a a a a a a a a y", 15));
 	TextAnimatedProjector a4p(text);
 	*/
+		// A4Matcher am(new A4PreDetector(150), new A4PreciseDetector());
+	A4InHandMatcher factory;
+	A4Matcher *am = factory.getMatcher();
+
 	A4BasicGrabber a4g;
 
     IplImage* frame = 0;
@@ -79,14 +79,14 @@ int main(int argc, char** argv)
 			}
 		#endif //FROM_PICTURES
 			
-		am.setAndAnalyseImage(frame);
+		am->setAndAnalyseImage(frame);
 		
-		for(auto it = am.getPreResults().begin(); it != am.getPreResults().end(); ++it) {
+		for(auto it = am->getPreResults().begin(); it != am->getPreResults().end(); ++it) {
 			cvDrawRect(frame, (*it).ulpt, (*it).drpt, CV_RGB(0, 0, 255), 1, 8, 0);
 			cvDrawRect(frame, (*it).ulptBorder, (*it).drptBorder, CV_RGB(0, 255, 255), 1, 8, 0);
 		}
 		
-		for(auto pdr : am.getPreciseResults())
+		for(auto pdr : am->getPreciseResults())
 		{
 			cvDrawCircle(frame, pdr.UR, 1, CV_RGB(255, 0, 0), 2, 8, 0);
 			cvDrawCircle(frame, pdr.UL, 1, CV_RGB(255, 0, 0), 2, 8, 0);
@@ -113,15 +113,17 @@ int main(int argc, char** argv)
 			#endif DEBUG_LINES_INFORMATION
 			
 			//a4p.project(frame, pdr);
+			/*
 			a4g.grab(frame, pdr);
 			A4MemoryBank* testa4process = new A4MemoryBank();
-			testa4process->consumeImage(a4g. dst);
+			testa4process->consumeImage(a4g.dst);
 			TextImageProcessor tip;
 			tip.process(testa4process);
 			cvShowImage("testa4processRed", testa4process->redChannel);
 			char c = cvWaitKey(100000);
+			*/
 		}
-		am.clearResults();
+		am->clearResults();
 
         cvShowImage("frame", frame);
 		
@@ -138,6 +140,8 @@ int main(int argc, char** argv)
 	#ifndef FROM_PICTURES
 		cvReleaseCapture( &capture );
 	#endif //FROM_PICTURES
+
+	delete am;
 
     return 0;
 }

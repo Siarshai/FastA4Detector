@@ -144,9 +144,40 @@ void A4MemoryBank::consumeImage(IplImage *aimage, int resizeFactor)
 	cvResize(greenChannel, greenChannelResized);
 	cvResize(blueChannel, blueChannelResized);
 
+	//TODO: move it in separate processor
 	cvSmooth(redChannelResized, redChannelResized, CV_MEDIAN, 3);
 	cvSmooth(greenChannelResized, greenChannelResized, CV_MEDIAN, 3);
-	cvSmooth(blueChannelResized, blueChannelResized, CV_MEDIAN, 3);
+	cvSmooth(blueChannelResized, blueChannelResized, CV_MEDIAN, 3); 
 	
 }
 
+void A4MemoryBank::dumpBordersFactored()
+{
+	cvShowImage("uBordersFactored", uBordersFactored);
+	cvShowImage("dBordersFactored", dBordersFactored);
+	cvShowImage("lBordersFactored", lBordersFactored);
+	cvShowImage("rBordersFactored", rBordersFactored);
+	char c = cvWaitKey(100000);
+}
+void A4MemoryBank::dumpBorders()
+{
+	cvShowImage("uBorders", uBorders);
+	cvShowImage("dBorders", dBorders);
+	cvShowImage("lBorders", lBorders);
+	cvShowImage("rBorders", rBorders);
+	char c = cvWaitKey(100000);
+}
+void A4MemoryBank::dumpFactored()
+{
+	cvShowImage("redChannelResized", redChannelResized);
+	cvShowImage("greenChannelResized", greenChannelResized);
+	cvShowImage("blueChannelResized", blueChannelResized);
+	char c = cvWaitKey(100000);
+}
+void A4MemoryBank::dumpOrigin()
+{
+	cvShowImage("redChannel", redChannel);
+	cvShowImage("greenChannel", greenChannel);
+	cvShowImage("blueChannel", blueChannel);
+	char c = cvWaitKey(100000);
+}

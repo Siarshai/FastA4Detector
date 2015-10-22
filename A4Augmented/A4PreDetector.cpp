@@ -5,6 +5,11 @@ using std::max;
 using std::min;
 
 
+A4PreDetector::A4PreDetector(int amaxBordersInside)
+{
+	maxBordersInside = amaxBordersInside;
+}
+
 void A4PreDetector::normalizePoints(A4MemoryBank *memoryBank)
 {
 	for(std::list<A4PreDetectedRecord>::iterator it = A4PreDetected.begin(); it != A4PreDetected.end(); ++it) {
@@ -61,13 +66,14 @@ void A4PreDetector::detect(A4MemoryBank *memoryBank)
 		{
 			for(int j = 0; j < memoryBank->sizeFactored.width - searchWidth - 2*safetyWidthMargin; ++j)
 			{
+				int currentMaxBordersInside = 255*maxBordersInside*memoryBank->sizeFactored.width/searchWidth; 
 				if(databufferFactored[i*stepbufferFactored + j] == 0)
 				{
 					int whiteBodyBorders = pieceOfII(datauBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datadBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datarBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
 					whiteBodyBorders += pieceOfII(datalBordersIIFactored, j + safetyWidthMargin, i + safetyHeightMargin, searchWidth, searchHeight, step);
-					if(    whiteBodyBorders < 50*255 
+					if(    whiteBodyBorders < currentMaxBordersInside
 						&& horizontalBlockPassII(datauBordersIIFactored, j, i, widthBorderBlock, safetyHeightMargin, step)
 						&& verticalBlockPassII(datalBordersIIFactored, j, i, safetyWidthMargin, heightBorderBlock, step) 
 						&& horizontalBlockPassII(datadBordersIIFactored, j, i + searchHeight + safetyHeightMargin, widthBorderBlock, safetyHeightMargin, step) 

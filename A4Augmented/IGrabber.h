@@ -9,6 +9,7 @@
 class IGrabber
 {
 public:
+	virtual ~IGrabber() {}
 	virtual void grab(IplImage* src, A4PreciseDetectedRecord dstRecord) = 0;
 };
 

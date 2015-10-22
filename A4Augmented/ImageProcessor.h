@@ -7,16 +7,10 @@
 #include <memory>
 
 
-class IImageSplitter
-{
-public:
-	virtual void process(IplImage *src, A4MemoryBank* dstDissected) = 0;
-};
-
-
 class IImageProcessor
 {
 public:
+	virtual ~IImageProcessor() {}
 	virtual void process(A4MemoryBank* src) = 0;
 };
 

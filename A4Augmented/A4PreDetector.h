@@ -5,8 +5,10 @@
 
 class A4PreDetector : public APreDetector
 {
+	int maxBordersInside;
 	void normalizePoints(A4MemoryBank *memoryBank);
 public:
+	A4PreDetector(int amaxBordersInside);
 	void detect(A4MemoryBank *memoryBank);
 };
 

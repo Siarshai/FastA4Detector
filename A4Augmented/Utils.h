@@ -94,4 +94,68 @@ double generalSlopeFunction(T x, T loVal, T loThreshold, T hiVal, T hiThreshold)
 	}
 }
 
+//TODO: It can be easily optimized
+class LocalHistogrammAnalyzer
+{
+public:
+	int hist[256];
+	int histI[256];
+	bool isHistIValid;
+	LocalHistogrammAnalyzer()
+	{
+		discard();
+	}
+	void discard() 
+	{
+		for(int i = 0; i < 256; ++i)
+		{
+			hist[i] = 0;
+			histI[i] = 0;
+		}
+		isHistIValid = false;
+	}
+	void makeHist(uchar *data, int height, int width, int step)
+	{
+		isHistIValid = false;
+		for(int i = 0; i < height; ++i)
+		{
+			for(int j = 0; j < width; ++j)
+			{
+				++hist[ *(data + step*i + j) ];
+			}
+		}
+	}
+	void makeHistI()
+	{
+		isHistIValid = true;
+		histI[0] = hist[0];
+		for(int i = 1; i < 256; ++i)
+		{
+			histI[i] = histI[i-1] + hist[i];
+		}
+	}
+	//returns color of most left pixel from right side of gap
+	int gapSearch(int gapSize, int gapThreshold, int clusterThreshold)
+	{
+		if(isHistIValid == true)
+			makeHistI();
+		for(int i = 255; i > gapSize; --i)
+		{
+			if( (histI[i] - histI[i-gapSize] < gapThreshold) && (histI[255] - histI[i] > clusterThreshold) && (histI[i-gapSize] - histI[0] > clusterThreshold)) 
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	int analyze(uchar *data, int height, int width, int step, int gapSize, int gapThreshold, int clusterThreshold)
+	{
+		discard();
+		makeHist(data, height, width, step);
+		makeHistI();
+		return gapSearch(gapSize, gapThreshold, clusterThreshold);
+	}
+};
+
 #endif // UTILS_H
